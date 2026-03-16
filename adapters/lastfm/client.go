@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	apiBaseUrl = "https://ws.audioscrobbler.com/2.0/"
+	apiBaseUrl = "http://192.168.10.2:2522/"
 )
 
 type lastFMError struct {
