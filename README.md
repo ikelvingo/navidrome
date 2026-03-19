@@ -1,9 +1,12 @@
 ## Scrobbling from netease. 
 
-# You should use it with [navichina](https://github.com/TooAndy/navichina)
+## You should use it with [navichina](https://github.com/TooAndy/navichina) Thanks for TooAndy's great work.
 
-# Thanks for TooAndy's great work.
-
+# #1139840: Remove navichina dependency in navidrome-chinese. 
+Input new 'netease' agent for scrobbling artists, albums, similar songs, 
+and artist popular songs. 
+- Note1: Similar artists functionality not supported.
+- Note2: Configuration: Set the ND_AGENTS environment variable to 'netease' to activate the NetEase scrobbling agent.
 -----
 
 <a href="https://www.navidrome.org"><img src="resources/logo-192x192.png" alt="Navidrome logo" title="navidrome" align="right" height="60px" /></a>
