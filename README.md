@@ -8,6 +8,43 @@ and artist popular songs.
 - Note1: Similar artists functionality not supported.
 - Note2: Configuration: Set the ND_AGENTS environment variable to 'netease' to activate the NetEase scrobbling agent.
 -----
+>  [!IMPORTANT]
+>
+> **新增了 强制刷新Artist数据功能，提供以下功能：**
+
+## 使用方法
+
+```bash
+# 通过艺术家 ID 刷新
+ sudo docker exec -it navidrome refresh --id "xxxxx"
+
+# 通过艺术家名字刷新（支持模糊匹配）
+ sudo docker exec -it navidrome refresh --name "周杰伦"
+
+# 清除所有外部信息并刷新
+ sudo docker exec -it navidrome refresh --id "xxxxx" --clear-all
+
+# 只清除图片 URL
+ sudo docker exec -it navidrome refresh --name "周杰伦" --clear-images
+
+# 同时刷新该艺术家的所有专辑
+ sudo docker exec -it navidrome refresh --id "xxxxx" --albums --clear-all
+```
+
+## 可用参数
+
+| 参数              | 说明                   |
+| ----------------- | ---------------------- |
+| `--id`            | 艺术家 ID              |
+| `--name`          | 艺术家名字（模糊匹配） |
+| `--clear-images`  | 清除图片 URL           |
+| `--clear-bio`     | 清除传记               |
+| `--clear-similar` | 清除相似艺术家         |
+| `--clear-all`     | 清除所有外部信息       |
+| `--albums`        | 同时刷新该艺术家的专辑 |
+
+清除后，下次访问艺术家页面时会从外部源（Last.fm、网易云等）重新获取信息。
+-----
 
 <a href="https://www.navidrome.org"><img src="resources/logo-192x192.png" alt="Navidrome logo" title="navidrome" align="right" height="60px" /></a>
 
