@@ -1,0 +1,22 @@
+.DS_Store
+ui/node_modules
+ui/build
+!ui/build/.gitkeep
+Dockerfile
+docker-compose*.yml
+data
+*.db
+testDB
+navidrome
+navidrome.toml
+tmp
+!tmp/taglib
+dist
+binaries
+cache
+music
+music.old
+!Dockerfile
+# Exclude test and tool files with main functions
+check_artist_cache.go
+temp_cache_check/

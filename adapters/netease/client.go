@@ -18,16 +18,16 @@ import (
 // Default API base URLs - these are third-party NetEase Cloud Music API endpoints
 var defaultAPIBaseURLs = []string{
 	"https://apis.netstart.cn/music",
-	"https://apic.netstart.cn/music",
+	// "https://apic.netstart.cn/music", 延时过高，暂时移除
 	"https://ncm.zhenxin.me",
 	"https://ncmapi.btwoa.com",
 	"https://zm.wwoyun.cn",
 }
 
 var (
-	ErrNotFound     = errors.New("netease: not found")
-	ErrAPIError     = errors.New("netease: api error")
-	ErrInvalidCode  = errors.New("netease: invalid response code")
+	ErrNotFound    = errors.New("netease: not found")
+	ErrAPIError    = errors.New("netease: api error")
+	ErrInvalidCode = errors.New("netease: invalid response code")
 )
 
 // LoadBalanceMode defines how to select API endpoints
@@ -92,7 +92,7 @@ func (c *client) searchArtists(ctx context.Context, name string, limit int) ([]A
 	params.Add("limit", strconv.Itoa(limit))
 
 	baseURL := c.getBaseURL()
-	req, err := http.NewRequestWithContext(ctx, "GET", baseURL+"/search", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", baseURL+"/cloudsearch", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (c *client) searchSongs(ctx context.Context, name string, limit int) ([]Son
 	params.Add("limit", strconv.Itoa(limit))
 
 	baseURL := c.getBaseURL()
-	req, err := http.NewRequestWithContext(ctx, "GET", baseURL+"/search", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", baseURL+"/cloudsearch", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (c *client) searchAlbums(ctx context.Context, name string, limit int) ([]Al
 	params.Add("limit", strconv.Itoa(limit))
 
 	baseURL := c.getBaseURL()
-	req, err := http.NewRequestWithContext(ctx, "GET", baseURL+"/search", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", baseURL+"/cloudsearch", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +275,7 @@ func (c *client) makeRequest(req *http.Request, response any) error {
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0")
 	req.Header.Set("Origin", "https://music.163.com")
 	req.Header.Set("Referer", "https://music.163.com")
-	
+
 	log.Trace(req.Context(), fmt.Sprintf("Sending NetEase %s request", req.Method), "url", req.URL)
 	resp, err := c.httpDoer.Do(req)
 	if err != nil {
