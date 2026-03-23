@@ -12,6 +12,12 @@ Input new 'netease' agent for scrobbling artists, albums, similar songs,
 and artist popular songs. 
 - Note1: Similar artists functionality not supported.
 - Note2: Configuration: Set the ND_AGENTS environment variable to 'netease' to activate the NetEase scrobbling agent.
+    ```yaml
+    # docker compose modify
+      environment:
+        - ND_AGENTS=netease #,deezer,lastfm,listenbrainz
+    ```
+
 -----
 >  [!IMPORTANT]
 >
@@ -24,13 +30,13 @@ and artist popular songs.
  sudo docker exec -it navidrome refresh --id "xxxxx"
 
 # Refresh via artist name (supports fuzzy matching)
- sudo docker exec -it navidrome refresh --name "周杰伦"
+ sudo docker exec -it navidrome refresh --name "Taylor Swift"
 
 # Clear all external information and refresh
  sudo docker exec -it navidrome refresh --id "xxxxx" --clear-all
 
 # Clear only the artist's image URLs
- sudo docker exec -it navidrome refresh --name "周杰伦" --clear-images
+ sudo docker exec -it navidrome refresh --name "Taylor Swift" --clear-images
 
 # Refresh all albums of the artist simultaneously
  sudo docker exec -it navidrome refresh --id "xxxxx" --albums --clear-all
