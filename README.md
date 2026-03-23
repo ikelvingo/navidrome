@@ -1,6 +1,6 @@
 ## Scrobbling from netease. 
 
-## You should use it with [navichina](https://github.com/TooAndy/navichina) Thanks for TooAndy's great work.
+## ~~You should use it with [navichina](https://github.com/TooAndy/navichina)~~ Thanks for TooAndy's great work.
 
 # #1139840: Remove navichina dependency in navidrome-chinese. 
 Input new 'netease' agent for scrobbling artists, albums, similar songs, 
