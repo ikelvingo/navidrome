@@ -1,8 +1,13 @@
-## Scrobbling from netease. 
+##  Navidrome [China Special Edition] 
 
-## ~~You should use it with [navichina](https://github.com/TooAndy/navichina)~~ Thanks for TooAndy's great work.
+## Provide scrobbling artists and albums bio from netease.
 
-# #1139840: Remove navichina dependency in navidrome-chinese. 
+## #~~You should use it with [navichina](https://github.com/TooAndy/navichina)~~ 
+
+# Thanks for TooAndy's great work.
+
+# #1139840: Remove navichina dependency in navidrome-chinese.
+
 Input new 'netease' agent for scrobbling artists, albums, similar songs, 
 and artist popular songs. 
 - Note1: Similar artists functionality not supported.
@@ -10,127 +15,43 @@ and artist popular songs.
 -----
 >  [!IMPORTANT]
 >
-> **新增了 强制刷新Artist数据功能，提供以下功能：**
+> **Added the forced refresh Artist data function, providing the following features:**
 
-## 使用方法
+##  How to use
 
 ```bash
-# 通过艺术家 ID 刷新
+# Refresh via artist ID
  sudo docker exec -it navidrome refresh --id "xxxxx"
 
-# 通过艺术家名字刷新（支持模糊匹配）
+# Refresh via artist name (supports fuzzy matching)
  sudo docker exec -it navidrome refresh --name "周杰伦"
 
-# 清除所有外部信息并刷新
+# Clear all external information and refresh
  sudo docker exec -it navidrome refresh --id "xxxxx" --clear-all
 
-# 只清除图片 URL
+# Clear only the artist's image URLs
  sudo docker exec -it navidrome refresh --name "周杰伦" --clear-images
 
-# 同时刷新该艺术家的所有专辑
+# Refresh all albums of the artist simultaneously
  sudo docker exec -it navidrome refresh --id "xxxxx" --albums --clear-all
 ```
 
-## 可用参数
+## Available parameters
 
-| 参数              | 说明                   |
-| ----------------- | ---------------------- |
-| `--id`            | 艺术家 ID              |
-| `--name`          | 艺术家名字（模糊匹配） |
-| `--clear-images`  | 清除图片 URL           |
-| `--clear-bio`     | 清除传记               |
-| `--clear-similar` | 清除相似艺术家         |
-| `--clear-all`     | 清除所有外部信息       |
-| `--albums`        | 同时刷新该艺术家的专辑 |
+| Parameters        | **Instructions**                            |
+| ----------------- | ------------------------------------------- |
+| `--id`            | clear artist ID                             |
+| `--name`          | clear artist name (supports fuzzy matching) |
+| `--clear-images`  | clear image URLs                            |
+| `--clear-bio`     | clear artist bio                            |
+| `--clear-similar` | clear similar artists                       |
+| `--clear-all`     | clear all external infomation               |
+| `--albums`        | clear all artist’s albums                   |
 
-清除后，下次访问艺术家页面时会从外部源（Last.fm、网易云等）重新获取信息。
+After clearing, the next time you visit the artist's page, information will be fetched again from external sources (Last.fm, NetEase Cloud Music, etc.).
+
 -----
 
-<a href="https://www.navidrome.org"><img src="resources/logo-192x192.png" alt="Navidrome logo" title="navidrome" align="right" height="60px" /></a>
-
-# Navidrome Music Server &nbsp;[![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Tired%20of%20paying%20for%20music%20subscriptions%2C%20and%20not%20finding%20what%20you%20really%20like%3F%20Roll%20your%20own%20streaming%20service%21&url=https://navidrome.org&via=navidrome)
-
-[![Last Release](https://img.shields.io/github/v/release/navidrome/navidrome?logo=github&label=latest&style=flat-square)](https://github.com/navidrome/navidrome/releases)
-[![Build](https://img.shields.io/github/actions/workflow/status/navidrome/navidrome/pipeline.yml?branch=master&logo=github&style=flat-square)](https://nightly.link/navidrome/navidrome/workflows/pipeline/master)
-[![Downloads](https://img.shields.io/github/downloads/navidrome/navidrome/total?logo=github&style=flat-square)](https://github.com/navidrome/navidrome/releases/latest)
-[![Docker Pulls](https://img.shields.io/docker/pulls/deluan/navidrome?logo=docker&label=pulls&style=flat-square)](https://hub.docker.com/r/deluan/navidrome)
-[![Dev Chat](https://img.shields.io/discord/671335427726114836?logo=discord&label=discord&style=flat-square)](https://discord.gg/xh7j7yF)
-[![Subreddit](https://img.shields.io/reddit/subreddit-subscribers/navidrome?logo=reddit&label=/r/navidrome&style=flat-square)](https://www.reddit.com/r/navidrome/)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0-ff69b4.svg?style=flat-square)](CODE_OF_CONDUCT.md)
-[![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Navidrome%20Guru-006BFF?style=flat-square)](https://gurubase.io/g/navidrome)
-
-Navidrome is an open source web-based music collection server and streamer. It gives you freedom to listen to your
-music collection from any browser or mobile device. It's like your personal Spotify!
 
 
-**Note**: The `master` branch may be in an unstable or even broken state during development. 
-Please use [releases](https://github.com/navidrome/navidrome/releases) instead of 
-the `master` branch in order to get a stable set of binaries.
 
-## [Check out our Live Demo!](https://www.navidrome.org/demo/)
-
-__Any feedback is welcome!__ If you need/want a new feature, find a bug or think of any way to improve Navidrome, 
-please file a [GitHub issue](https://github.com/navidrome/navidrome/issues) or join the discussion in our 
-[Subreddit](https://www.reddit.com/r/navidrome/). If you want to contribute to the project in any other way 
-([ui/backend dev](https://www.navidrome.org/docs/developers/), 
-[translations](https://www.navidrome.org/docs/developers/translations/), 
-[themes](https://www.navidrome.org/docs/developers/creating-themes)), please join the chat in our 
-[Discord server](https://discord.gg/xh7j7yF). 
-
-## Installation
-
-See instructions on the [project's website](https://www.navidrome.org/docs/installation/)
-
-## Cloud Hosting
-
-[PikaPods](https://www.pikapods.com) has partnered with us to offer you an 
-[officially supported, cloud-hosted solution](https://www.navidrome.org/docs/installation/managed/#pikapods). 
-A share of the revenue helps fund the development of Navidrome at no additional cost for you.
-
-[![PikaPods](https://www.pikapods.com/static/run-button.svg)](https://www.pikapods.com/pods?run=navidrome)
-
-## Features
- 
- - Handles very **large music collections**
- - Streams virtually **any audio format** available
- - Reads and uses all your beautifully curated **metadata**
- - Great support for **compilations** (Various Artists albums) and **box sets** (multi-disc albums)
- - **Multi-user**, each user has their own play counts, playlists, favourites, etc...
- - Very **low resource usage**
- - **Multi-platform**, runs on macOS, Linux and Windows. **Docker** images are also provided
- - Ready to use binaries for all major platforms, including **Raspberry Pi**
- - Automatically **monitors your library** for changes, importing new files and reloading new metadata 
- - **Themeable**, modern and responsive **Web interface** based on [Material UI](https://material-ui.com)
- - **Compatible** with all Subsonic/Madsonic/Airsonic [clients](https://www.navidrome.org/docs/overview/#apps)
- - **Transcoding** on the fly. Can be set per user/player. **Opus encoding is supported**
- - Translated to **various languages**
-
-## Translations
-
-Navidrome uses [POEditor](https://poeditor.com/) for translations, and we are always looking 
-for [more contributors](https://www.navidrome.org/docs/developers/translations/)
-
-<a href="https://poeditor.com/"> 
-<img height="32" src="https://github.com/user-attachments/assets/c19b1d2b-01e1-4682-a007-12356c42147c">
-</a>
-
-## Documentation
-All documentation can be found in the project's website: https://www.navidrome.org/docs. 
-Here are some useful direct links:
-
-- [Overview](https://www.navidrome.org/docs/overview/)
-- [Installation](https://www.navidrome.org/docs/installation/)
-  - [Docker](https://www.navidrome.org/docs/installation/docker/)
-  - [Binaries](https://www.navidrome.org/docs/installation/pre-built-binaries/)
-  - [Build from source](https://www.navidrome.org/docs/installation/build-from-source/)
-- [Development](https://www.navidrome.org/docs/developers/)
-- [Subsonic API Compatibility](https://www.navidrome.org/docs/developers/subsonic-api/)
-
-## Screenshots
-
-<p align="left">
-    <img height="550" src="https://raw.githubusercontent.com/navidrome/navidrome/master/.github/screenshots/ss-mobile-login.png">
-    <img height="550" src="https://raw.githubusercontent.com/navidrome/navidrome/master/.github/screenshots/ss-mobile-player.png">
-    <img height="550" src="https://raw.githubusercontent.com/navidrome/navidrome/master/.github/screenshots/ss-mobile-album-view.png">
-    <img width="550" src="https://raw.githubusercontent.com/navidrome/navidrome/master/.github/screenshots/ss-desktop-player.png">
-</p>
