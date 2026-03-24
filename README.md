@@ -4,7 +4,7 @@
 
 ## #~~You should use it with [navichina](https://github.com/TooAndy/navichina)~~ 
 
-# Thanks for TooAndy's great work.
+# Thanks for [TooAndy](https://github.com/TooAndy)'s great work.
 
 # #1139840: Remove navichina dependency in navidrome-chinese.
 
