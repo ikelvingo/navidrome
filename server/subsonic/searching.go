@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	. "github.com/Masterminds/squirrel"
@@ -14,6 +15,7 @@ import (
 	"github.com/navidrome/navidrome/log"
 	"github.com/navidrome/navidrome/model"
 	"github.com/navidrome/navidrome/server/subsonic/responses"
+	"github.com/navidrome/navidrome/utils/opencc"
 	"github.com/navidrome/navidrome/utils/req"
 	"github.com/navidrome/navidrome/utils/slice"
 	"golang.org/x/sync/errgroup"
@@ -62,9 +64,186 @@ func callSearch[T any](ctx context.Context, s searchFunc[T], q string, options m
 	}
 }
 
+// searchMediaFilesWithVariants 使用多个查询变体搜索MediaFiles
+func searchMediaFilesWithVariants(
+	ctx context.Context,
+	searchFn func(q string, options ...model.QueryOptions) (model.MediaFiles, error),
+	queries []string,
+	options model.QueryOptions,
+) model.MediaFiles {
+	if len(queries) == 1 {
+		result, _ := searchFn(queries[0], options)
+		return result
+	}
+
+	var results []model.MediaFiles
+	var mu sync.Mutex
+
+	g, _ := errgroup.WithContext(ctx)
+	for _, q := range queries {
+		g.Go(func(query string) func() error {
+			return func() error {
+				log.Debug(ctx, "Searching MediaFiles with variant", "query", query)
+				result, err := searchFn(query, options)
+				if err == nil {
+					mu.Lock()
+					results = append(results, result)
+					mu.Unlock()
+					log.Debug(ctx, "MediaFiles search variant completed", "query", query, "count", len(result))
+				} else {
+					log.Error(ctx, "MediaFiles search variant failed", "query", query, err)
+				}
+				return nil
+			}
+		}(q))
+	}
+	g.Wait()
+
+	merged := mergeMediaFiles(results)
+	log.Debug(ctx, "MediaFiles merged results", "totalVariants", len(results), "mergedCount", len(merged))
+	return merged
+}
+
+// searchAlbumsWithVariants 使用多个查询变体搜索Albums
+func searchAlbumsWithVariants(
+	ctx context.Context,
+	searchFn func(q string, options ...model.QueryOptions) (model.Albums, error),
+	queries []string,
+	options model.QueryOptions,
+) model.Albums {
+	if len(queries) == 1 {
+		result, _ := searchFn(queries[0], options)
+		return result
+	}
+
+	var results []model.Albums
+	var mu sync.Mutex
+
+	g, _ := errgroup.WithContext(ctx)
+	for _, q := range queries {
+		g.Go(func(query string) func() error {
+			return func() error {
+				result, err := searchFn(query, options)
+				if err == nil {
+					mu.Lock()
+					results = append(results, result)
+					mu.Unlock()
+				}
+				return nil
+			}
+		}(q))
+	}
+	g.Wait()
+
+	return mergeAlbums(results)
+}
+
+// searchArtistsWithVariants 使用多个查询变体搜索Artists
+func searchArtistsWithVariants(
+	ctx context.Context,
+	searchFn func(q string, options ...model.QueryOptions) (model.Artists, error),
+	queries []string,
+	options model.QueryOptions,
+) model.Artists {
+	if len(queries) == 1 {
+		result, _ := searchFn(queries[0], options)
+		return result
+	}
+
+	var results []model.Artists
+	var mu sync.Mutex
+
+	g, _ := errgroup.WithContext(ctx)
+	for _, q := range queries {
+		g.Go(func(query string) func() error {
+			return func() error {
+				result, err := searchFn(query, options)
+				if err == nil {
+					mu.Lock()
+					results = append(results, result)
+					mu.Unlock()
+				}
+				return nil
+			}
+		}(q))
+	}
+	g.Wait()
+
+	return mergeArtists(results)
+}
+
+func mergeMediaFiles(results []model.MediaFiles) model.MediaFiles {
+	if len(results) == 0 {
+		return model.MediaFiles{}
+	}
+	if len(results) == 1 {
+		return results[0]
+	}
+
+	seen := make(map[string]bool)
+	var merged model.MediaFiles
+	for _, r := range results {
+		for _, item := range r {
+			if !seen[item.ID] {
+				seen[item.ID] = true
+				merged = append(merged, item)
+			}
+		}
+	}
+	return merged
+}
+
+func mergeAlbums(results []model.Albums) model.Albums {
+	if len(results) == 0 {
+		return model.Albums{}
+	}
+	if len(results) == 1 {
+		return results[0]
+	}
+
+	seen := make(map[string]bool)
+	var merged model.Albums
+	for _, r := range results {
+		for _, item := range r {
+			if !seen[item.ID] {
+				seen[item.ID] = true
+				merged = append(merged, item)
+			}
+		}
+	}
+	return merged
+}
+
+func mergeArtists(results []model.Artists) model.Artists {
+	if len(results) == 0 {
+		return model.Artists{}
+	}
+	if len(results) == 1 {
+		return results[0]
+	}
+
+	seen := make(map[string]bool)
+	var merged model.Artists
+	for _, r := range results {
+		for _, item := range r {
+			if !seen[item.ID] {
+				seen[item.ID] = true
+				merged = append(merged, item)
+			}
+		}
+	}
+	return merged
+}
+
 func (api *Router) searchAll(ctx context.Context, sp *searchParams, musicFolderIds []int) (mediaFiles model.MediaFiles, albums model.Albums, artists model.Artists) {
 	start := time.Now()
 	q := sanitize.Accents(strings.ToLower(strings.TrimSuffix(sp.query, "*")))
+
+	// 获取搜索查询变体（包含简繁体转换）
+	queries := opencc.GetSearchQueries(q)
+	if len(queries) > 1 {
+		log.Debug(ctx, "Chinese query conversion", "original", q, "variants", queries)
+	}
 
 	// Build options with offset/size/filters packed in
 	songOpts := model.QueryOptions{Max: sp.songCount, Offset: sp.songOffset}
@@ -77,11 +256,20 @@ func (api *Router) searchAll(ctx context.Context, sp *searchParams, musicFolderI
 		artistOpts.Filters = Eq{"library_artist.library_id": musicFolderIds}
 	}
 
-	// Run searches in parallel
+	// Run searches in parallel with variants support
 	g, ctx := errgroup.WithContext(ctx)
-	g.Go(callSearch(ctx, api.ds.MediaFile(ctx).Search, q, songOpts, &mediaFiles))
-	g.Go(callSearch(ctx, api.ds.Album(ctx).Search, q, albumOpts, &albums))
-	g.Go(callSearch(ctx, api.ds.Artist(ctx).Search, q, artistOpts, &artists))
+	g.Go(func() error {
+		mediaFiles = searchMediaFilesWithVariants(ctx, api.ds.MediaFile(ctx).Search, queries, songOpts)
+		return nil
+	})
+	g.Go(func() error {
+		albums = searchAlbumsWithVariants(ctx, api.ds.Album(ctx).Search, queries, albumOpts)
+		return nil
+	})
+	g.Go(func() error {
+		artists = searchArtistsWithVariants(ctx, api.ds.Artist(ctx).Search, queries, artistOpts)
+		return nil
+	})
 	err := g.Wait()
 	if err == nil {
 		log.Debug(ctx, fmt.Sprintf("Search resulted in %d songs, %d albums and %d artists",

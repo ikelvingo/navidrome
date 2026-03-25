@@ -20,3 +20,4 @@ music.old
 # Exclude test and tool files with main functions
 check_artist_cache.go
 temp_cache_check/
+*.bak

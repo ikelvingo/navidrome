@@ -10,6 +10,7 @@ import (
 	. "github.com/Masterminds/squirrel"
 	"github.com/navidrome/navidrome/log"
 	"github.com/navidrome/navidrome/model"
+	"github.com/navidrome/navidrome/utils/opencc"
 )
 
 // containsCJK returns true if the string contains any CJK (Chinese/Japanese/Korean) characters.
@@ -385,17 +386,64 @@ func ftsQueryDegraded(original, ftsQuery string) bool {
 	return true
 }
 
+// buildFTS5QueryWithVariants 构建包含简繁体变体的FTS5查询
+// 如果查询包含中文，会生成简体和繁体两种形式的查询，用OR连接
+func buildFTS5QueryWithVariants(userInput string) string {
+	// 获取查询变体
+	queries := opencc.GetSearchQueries(userInput)
+
+	if len(queries) == 0 {
+		return ""
+	}
+
+	// 如果只有一个变体，直接返回
+	if len(queries) == 1 {
+		return buildFTS5Query(queries[0])
+	}
+
+	// 为每个变体构建FTS5查询
+	var ftsQueries []string
+	for _, query := range queries {
+		ftsQuery := buildFTS5Query(query)
+		if ftsQuery != "" {
+			ftsQueries = append(ftsQueries, ftsQuery)
+		}
+	}
+
+	// 去重
+	uniqueQueries := make(map[string]bool)
+	var finalQueries []string
+	for _, q := range ftsQueries {
+		if !uniqueQueries[q] {
+			uniqueQueries[q] = true
+			finalQueries = append(finalQueries, q)
+		}
+	}
+
+	if len(finalQueries) == 0 {
+		return ""
+	}
+
+	// 如果只有一个有效查询，直接返回
+	if len(finalQueries) == 1 {
+		return finalQueries[0]
+	}
+
+	// 用OR连接多个查询变体
+	return "(" + strings.Join(finalQueries, " OR ") + ")"
+}
+
 // newFTSSearch creates an FTS5 search strategy. Falls back to LIKE search if the
 // query produces no FTS tokens (e.g., punctuation-only like "!!!!!!!") or if FTS
 // tokenization stripped significant content from the query (e.g., "1+" ÿ¢?"1*").
 // Returns nil when the query produces no searchable tokens at all.
 func newFTSSearch(tableName, query string) searchStrategy {
-	q := buildFTS5Query(query)
+	q := buildFTS5QueryWithVariants(query)
 	if q == "" || ftsQueryDegraded(query, q) {
 		// Fallback: try LIKE search with the raw query
 		cleaned := strings.TrimSpace(strings.ReplaceAll(query, `"`, ""))
 		if cleaned != "" {
-			log.Trace("Search using LIKE fallback for non-tokenizable query", "table", tableName, "query", cleaned)
+			log.Debug("Search using LIKE fallback for non-tokenizable query", "table", tableName, "query", cleaned)
 			return newLikeSearch(tableName, cleaned)
 		}
 		return nil
@@ -417,6 +465,6 @@ func newFTSSearch(tableName, query string) searchStrategy {
 		matchExpr: matchExpr,
 		rankExpr:  rankExpr,
 	}
-	log.Trace("Search using FTS5 backend", "table", tableName, "query", q, "filter", s)
+	log.Debug("Search using FTS5 backend", "table", tableName, "query", q, "filter", s)
 	return s
 }

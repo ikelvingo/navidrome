@@ -1,11 +1,14 @@
 package persistence
 
 import (
+	"context"
+	"fmt"
 	"strings"
 
 	. "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/navidrome/navidrome/conf"
+	"github.com/navidrome/navidrome/log"
 	"github.com/navidrome/navidrome/model"
 	"github.com/navidrome/navidrome/utils/str"
 )
@@ -36,12 +39,17 @@ type searchStrategy interface {
 // getSearchStrategy returns the appropriate search strategy based on config and query content.
 // Returns nil when the query produces no searchable tokens.
 func getSearchStrategy(tableName, query string) searchStrategy {
+	log.Debug(context.Background(), "getSearchStrategy called", "table", tableName, "query", query, "containsCJK", containsCJK(query))
+
 	if conf.Server.Search.Backend == "legacy" || conf.Server.Search.FullString {
+		log.Debug(context.Background(), "getSearchStrategy: using legacy search")
 		return newLegacySearch(tableName, query)
 	}
 	if containsCJK(query) {
+		log.Debug(context.Background(), "getSearchStrategy: using LIKE search (CJK detected)")
 		return newLikeSearch(tableName, query)
 	}
+	log.Debug(context.Background(), "getSearchStrategy: using FTS search")
 	return newFTSSearch(tableName, query)
 }
 
@@ -50,19 +58,25 @@ func getSearchStrategy(tableName, query string) searchStrategy {
 // via newSelect(options...). options is forwarded so FTS Phase 1 can apply the same
 // filters and pagination independently.
 func (r sqlRepository) doSearch(sq SelectBuilder, q string, results any, cfg searchConfig, options model.QueryOptions) error {
+	log.Debug(r.ctx, "doSearch called", "table", r.tableName, "query", q, "options", options)
+
 	q = strings.TrimSpace(q)
 	q = strings.TrimSuffix(q, "*")
+
+	log.Debug(r.ctx, "doSearch after cleanup", "cleanedQuery", q)
 
 	sq = sq.Where(Eq{r.tableName + ".missing": false})
 
 	// Empty query (OpenSubsonic `search3?query=""`) ÿ¢?return all in natural order.
 	if q == "" || q == `""` {
+		log.Debug(r.ctx, "doSearch: empty query, returning all")
 		sq = sq.OrderBy(cfg.NaturalOrder)
 		return r.queryAll(sq, results, options)
 	}
 
 	// MBID search: if query is a valid UUID, search by MBID fields instead
 	if uuid.Validate(q) == nil && len(cfg.MBIDFields) > 0 {
+		log.Debug(r.ctx, "doSearch: MBID search", "mbid", q)
 		sq = sq.Where(mbidExpr(r.tableName, q, cfg.MBIDFields...))
 		return r.queryAll(sq, results)
 	}
@@ -71,14 +85,18 @@ func (r sqlRepository) doSearch(sq SelectBuilder, q string, results any, cfg sea
 	// This check lives here (not in the strategies) so that fullTextFilter
 	// (REST filter path) can still use single-character queries.
 	if len(q) < 2 {
+		log.Debug(r.ctx, "doSearch: query too short", "length", len(q))
 		return nil
 	}
 
+	log.Debug(r.ctx, "doSearch: getting search strategy")
 	strategy := getSearchStrategy(r.tableName, q)
 	if strategy == nil {
+		log.Debug(r.ctx, "doSearch: no search strategy found")
 		return nil
 	}
 
+	log.Debug(r.ctx, "doSearch: executing search strategy", "strategyType", fmt.Sprintf("%T", strategy))
 	return strategy.execute(r, sq, results, cfg, options)
 }
 

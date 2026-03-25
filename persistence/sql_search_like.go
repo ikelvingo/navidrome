@@ -7,6 +7,7 @@ import (
 	"github.com/navidrome/navidrome/conf"
 	"github.com/navidrome/navidrome/log"
 	"github.com/navidrome/navidrome/model"
+	"github.com/navidrome/navidrome/utils/opencc"
 	"github.com/navidrome/navidrome/utils/str"
 )
 
@@ -50,22 +51,38 @@ func newLikeSearch(tableName, query string) searchStrategy {
 // legacySearchExpr generates LIKE-based search filters against the full_text column.
 // This is the original search implementation, used when Search.Backend="legacy".
 func legacySearchExpr(tableName string, s string) Sqlizer {
-	q := str.SanitizeStrings(s)
-	if q == "" {
-		log.Trace("Search using legacy backend, query is empty", "table", tableName)
+	// 获取简繁体查询变体
+	queries := opencc.GetSearchQueries(s)
+	if len(queries) > 1 {
+		log.Debug("Chinese query conversion", "original", s, "variants", queries)
+	}
+
+	var variantFilters []Sqlizer
+	for _, query := range queries {
+		q := str.SanitizeStrings(query)
+		if q == "" {
+			continue
+		}
+		var sep string
+		if !conf.Server.Search.FullString {
+			sep = " "
+		}
+		parts := strings.Split(q, " ")
+		filters := And{}
+		for _, part := range parts {
+			filters = append(filters, Like{tableName + ".full_text": "%" + sep + part + "%"})
+		}
+		variantFilters = append(variantFilters, filters)
+	}
+
+	if len(variantFilters) == 0 {
+		log.Debug("Search using legacy backend, query is empty", "table", tableName)
 		return nil
 	}
-	var sep string
-	if !conf.Server.Search.FullString {
-		sep = " "
-	}
-	parts := strings.Split(q, " ")
-	filters := And{}
-	for _, part := range parts {
-		filters = append(filters, Like{tableName + ".full_text": "%" + sep + part + "%"})
-	}
-	log.Trace("Search using legacy backend", "query", filters, "table", tableName)
-	return filters
+
+	result := Or(variantFilters)
+	log.Debug("Search using legacy backend with Chinese variants", "query", result, "table", tableName, "variants", queries)
+	return result
 }
 
 // likeSearchColumns defines the core columns to search with LIKE queries.
@@ -84,23 +101,43 @@ var likeSearchColumns = map[string][]string{
 func likeSearchExpr(tableName string, s string) Sqlizer {
 	s = strings.TrimSpace(s)
 	if s == "" {
-		log.Trace("Search using LIKE backend, query is empty", "table", tableName)
+		log.Debug("Search using LIKE backend, query is empty", "table", tableName)
 		return nil
 	}
+
+	// 获取简繁体查询变体
+	queries := opencc.GetSearchQueries(s)
+
+	// 调试日志：记录查询变体
+	log.Debug("OpenCC query variants", "original", s, "variants", queries, "count", len(queries))
+
+	if len(queries) > 1 {
+		log.Debug("Chinese query conversion", "original", s, "variants", queries)
+	}
+
 	columns, ok := likeSearchColumns[tableName]
 	if !ok {
-		log.Trace("Search using LIKE backend, couldn't find columns for this table", "table", tableName)
+		log.Debug("Search using LIKE backend, couldn't find columns for this table", "table", tableName)
 		return nil
 	}
-	words := strings.Fields(s)
-	wordFilters := And{}
-	for _, word := range words {
-		colFilters := Or{}
-		for _, col := range columns {
-			colFilters = append(colFilters, Like{tableName + "." + col: "%" + word + "%"})
+
+	// 为每个查询变体构建OR条件
+	var variantFilters []Sqlizer
+	for _, query := range queries {
+		words := strings.Fields(query)
+		wordFilters := And{}
+		for _, word := range words {
+			colFilters := Or{}
+			for _, col := range columns {
+				colFilters = append(colFilters, Like{tableName + "." + col: "%" + word + "%"})
+			}
+			wordFilters = append(wordFilters, colFilters)
 		}
-		wordFilters = append(wordFilters, colFilters)
+		variantFilters = append(variantFilters, wordFilters)
 	}
-	log.Trace("Search using LIKE backend", "query", wordFilters, "table", tableName)
-	return wordFilters
+
+	// 使用OR连接所有查询变体
+	result := Or(variantFilters)
+	log.Debug("Search using LIKE backend with Chinese variants", "query", result, "table", tableName, "variants", queries, "variantCount", len(variantFilters))
+	return result
 }

@@ -109,10 +109,15 @@ func booleanFilter(field string, value any) Sqlizer {
 func fullTextFilter(tableName string, mbidFields ...string) func(string, any) Sqlizer {
 	return func(field string, value any) Sqlizer {
 		v := strings.ToLower(value.(string))
-		return cmp.Or[Sqlizer](
+		log.Debug(context.Background(), "fullTextFilter called", "table", tableName, "field", field, "value", v)
+
+		result := cmp.Or[Sqlizer](
 			mbidExpr(tableName, v, mbidFields...),
 			getSearchStrategy(tableName, v),
 		)
+
+		log.Debug(context.Background(), "fullTextFilter result", "table", tableName, "resultType", fmt.Sprintf("%T", result))
+		return result
 	}
 }
 

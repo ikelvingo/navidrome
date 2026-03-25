@@ -21,6 +21,14 @@ and artist popular songs.
 -----
 >  [!IMPORTANT]
 >
+> **引入OpenCC，终于统一了Navidrome中文繁简体搜索**
+> 众所周知，Navidrome在检索管理的音乐时，简体中文仅能检索简体中文，繁体中文仅能检索繁体中文，如搜索“周杰伦”，只会搜索到“周杰伦”的结果，而无法搜索到“周杰倫”的结果。
+> 本次更新，将实现无论搜索“周杰伦”还是“周杰倫”，系统会将“周杰伦”+“周杰倫”的所有搜索结果返回。从此你将不会在被繁简体检索的结果而烦恼。
+> 本次更新的搜索功能，无论web端还是subsonic api接口均生效。
+
+-----
+>  [!IMPORTANT]
+>
 > **Added the forced refresh Artist data function, providing the following features:**
 
 ##  How to use
