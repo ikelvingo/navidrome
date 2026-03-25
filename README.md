@@ -1,4 +1,8 @@
-##  Navidrome [China Special Edition] 
+#  Navidrome [China Special Edition] 
+
+``` bash
+docker push ikelvingo/navidrome-chinese:lastest
+```
 
 ## Provide scrobbling artists and albums bio from netease.
 
