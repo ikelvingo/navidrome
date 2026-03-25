@@ -24,7 +24,21 @@ and artist popular songs.
 > **引入OpenCC，终于统一了Navidrome中文繁简体搜索**
 > - 实现无论搜索“周杰伦”还是“周杰倫”，系统会将“周杰伦”+“周杰倫”的所有搜索结果返回。
 > - 本次更新的搜索功能，无论web端还是subsonic api接口均生效。
+**关于部分OpenSubsonic客户端Artist繁简搜索限制的说明**
 
+**问题发现**：经测试，部分使用OpenSubsonic API的客户端（如音流、Chora）在Artist搜索时，繁简转换功能可能无法生效。
+
+**原因分析**：这些客户端通过`albumArtists`接口获取艺术家列表后，**在本地执行搜索**，而非调用Navidrome的`search`接口。因此：
+
+- ✅ Song/Album搜索：繁简转换正常（调用服务端接口）
+- ❌ Artist搜索：繁简转换可能失效（本地搜索）
+
+**解决方案**：
+
+1. 如需在这些客户端中实现Artist繁简搜索，建议联系客户端开发者适配
+2. **推荐客户端**：[Amcfy Music/箭头音乐](https://cn.amcfy.com/) - 完全兼容本次搜索优化
+
+**技术说明**：此限制源于客户端实现逻辑差异，不影响Navidrome服务端功能完整性。
 
 -----
 >  [!IMPORTANT]
