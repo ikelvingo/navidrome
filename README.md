@@ -1,4 +1,8 @@
-##  Navidrome [China Special Edition] 
+#  Navidrome [China Special Edition] 
+
+``` bash
+docker pull ikelvingo/navidrome-chinese:lastest
+```
 
 ## Provide scrobbling artists and albums bio from netease.
 
@@ -10,21 +14,26 @@
 
 Input new 'netease' agent for scrobbling artists, albums, similar songs, 
 and artist popular songs. 
+
 - Note1: Similar artists functionality not supported.
+
 - Note2: Configuration: Set the ND_AGENTS environment variable to 'netease' to activate the NetEase scrobbling agent.
-    ```yaml
-    # docker compose modify
-      environment:
-        - ND_AGENTS=netease #,deezer,lastfm,listenbrainz
-    ```
+
+	```yaml
+	# docker compose modify
+	  environment:
+	    - ND_AGENTS=netease #,deezer,lastfm,listenbrainz
+	```
 
 -----
+
 >  [!IMPORTANT]
 >
-> **引入OpenCC，终于统一了Navidrome中文繁简体搜索**
-> - 实现无论搜索“周杰伦”还是“周杰倫”，系统会将“周杰伦”+“周杰倫”的所有搜索结果返回。
-> - 本次更新的搜索功能，无论web端还是subsonic api接口均生效。
-**关于部分OpenSubsonic客户端Artist繁简搜索限制的说明**
+>  **引入OpenCC，终于统一了Navidrome中文繁简体搜索**
+>
+>  - 实现无论搜索“周杰伦”还是“周杰倫”，系统会将“周杰伦”+“周杰倫”的所有搜索结果返回。
+>  - 本次更新的搜索功能，无论web端还是subsonic api接口均生效。
+>  	**关于部分OpenSubsonic客户端Artist繁简搜索限制的说明**
 
 **问题发现**：经测试，部分使用OpenSubsonic API的客户端（如音流、Chora）在Artist搜索时，繁简转换功能可能无法生效。
 
@@ -41,9 +50,10 @@ and artist popular songs.
 **技术说明**：此限制源于客户端实现逻辑差异，不影响Navidrome服务端功能完整性。
 
 -----
+
 >  [!IMPORTANT]
 >
-> **Added the forced refresh Artist data function, providing the following features:**
+>  **Added the forced refresh Artist data function, providing the following features:**
 
 ##  How to use
 
@@ -79,7 +89,6 @@ and artist popular songs.
 After clearing, the next time you visit the artist's page, information will be fetched again from external sources (Last.fm, NetEase Cloud Music, etc.).
 
 -----
-
 
 
 

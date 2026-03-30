@@ -1,9 +1,9 @@
 FROM --platform=$BUILDPLATFORM ghcr.nju.edu.cn/crazy-max/osxcross:14.5-debian AS osxcross
 
 ########################################################################################################################
-# 1. 使用官方的 xx 工具镜像，避免自行克隆编译，显著加快速度
+
 FROM --platform=$BUILDPLATFORM alpine:3.20 AS xx-build
-# 2. 获取 osxcross (仅在构建 darwin 目标时需要)
+
 # v1.9.0
 ENV XX_VERSION=a5592eab7a57895e8d385394ff12241bc65ecd50
 ENV LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8
@@ -75,7 +75,7 @@ COPY --from=ui /build /build
 FROM --platform=$BUILDPLATFORM golang:1.25-trixie AS base
 ADD deb-sources.list /etc/apt/sources.list.d/debian.sources
 RUN apt-get update && apt-get install -y clang lld
-# 从官方镜像引入 xx 
+
 COPY --from=xx / /
 WORKDIR /workspace
 
@@ -116,7 +116,8 @@ RUN --mount=type=bind,source=. \
     if [ "$(xx-info os)" != "darwin" ]; then
         export CC=$(xx-info)-gcc
         export CXX=$(xx-info)-g++
-        export LD_EXTRA="-extldflags '-static -latomic'"
+        # 使用双引号包裹整个参数，避免单引号嵌套问题
+        export LD_EXTRA='-extldflags "-static -latomic"'
     fi
     if [ "$(xx-info os)" = "windows" ]; then
         export EXT=".exe"
@@ -149,7 +150,7 @@ COPY --from=build /out /
 ### Build Final Image
 FROM alpine:3.20 AS final
 
-# 优化：使用国内 Alpine 镜像源
+
 RUN sed -i "s/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g" /etc/apk/repositories
 # Install ffmpeg and mpv
 RUN apk add -U --no-cache ffmpeg mpv sqlite
@@ -163,7 +164,7 @@ RUN apk add -U --no-cache ffmpeg mpv sqlite
 # RUN cat locale.md|xargs -i /usr/glibc-compat/bin/localedef -i {} -f UTF-8 {}.UTF-8
 ENV LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8
 
-# 设置容器内时区
+
 ENV TZ=Asia/Shanghai
 
 # Copy navidrome binary
