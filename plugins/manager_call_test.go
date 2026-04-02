@@ -56,7 +56,7 @@ var _ = Describe("callPluginFunction metrics", Ordered, func() {
 		metricsManager, _ = createTestManagerWithPluginsAndMetrics(
 			nil,
 			metricsRecorder,
-			"test-metadata-agent"㶧⑪ބ웗Ʝ⨧,
+			"test-metadata-agent"+PackageExtension,
 		)
 
 		var ok bool
@@ -94,7 +94,7 @@ var _ = Describe("callPluginFunction metrics", Ordered, func() {
 					"test-metadata-agent": {"error": "simulated error"},
 				},
 				errorRecorder,
-				"test-metadata-agent"㶧⑪ބ웗Ʝ⨧,
+				"test-metadata-agent"+PackageExtension,
 			)
 
 			var ok bool
@@ -126,7 +126,7 @@ var _ = Describe("callPluginFunction metrics", Ordered, func() {
 			partialManager, _ := createTestManagerWithPluginsAndMetrics(
 				nil,
 				partialRecorder,
-				"partial-metadata-agent"㶧⑪ބ웗Ʝ⨧,
+				"partial-metadata-agent"+PackageExtension,
 			)
 
 			var ok bool

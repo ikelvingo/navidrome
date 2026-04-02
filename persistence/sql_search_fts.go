@@ -36,7 +36,7 @@ func containsCJK(s string) bool {
 var fts5SpecialChars = regexp.MustCompile(`[^\p{L}\p{N}\s*"\x00]`)
 
 // fts5PunctStrip strips everything except letters and numbers (no whitespace, wildcards, or quotes).
-// Used for normalizing words at index time to create concatenated forms (e.g., "R.E.M." ÿ¢?"REM").
+// Used for normalizing words at index time to create concatenated forms (e.g., "R.E.M." → "REM").
 var fts5PunctStrip = regexp.MustCompile(`[^\p{L}\p{N}]`)
 
 // fts5Operators matches FTS5 boolean operators as whole words (case-insensitive).
@@ -47,7 +47,7 @@ var fts5LeadingStar = regexp.MustCompile(`(^|[\s])\*+`)
 
 // normalizeForFTS takes multiple strings, strips non-letter/non-number characters from each word,
 // and returns a space-separated string of words that changed after stripping (deduplicated).
-// This is used at index time to create concatenated forms: "R.E.M." ÿ¢?"REM", "AC/DC" ÿ¢?"ACDC".
+// This is used at index time to create concatenated forms: "R.E.M." → "REM", "AC/DC" → "ACDC".
 func normalizeForFTS(values ...string) string {
 	seen := make(map[string]struct{})
 	var result []string
@@ -81,8 +81,8 @@ const namePunctuation = `-/.''`
 
 // processPunctuatedWords handles words with embedded name punctuation before the general
 // special-character stripping. For each punctuated word it produces either:
-//   - A quoted phrase for dotted abbreviations: R.E.M. ÿ¢?"R E M"
-//   - A phrase+concat OR for other patterns:    a-ha  ÿ¢?("a ha" OR aha*)
+//   - A quoted phrase for dotted abbreviations: R.E.M. → "R E M"
+//   - A phrase+concat OR for other patterns:    a-ha  → ("a ha" OR aha*)
 func processPunctuatedWords(input string, phrases []string) (string, []string) {
 	words := strings.Fields(input)
 	var result []string
@@ -98,15 +98,15 @@ func processPunctuatedWords(input string, phrases []string) (string, []string) {
 		}
 		subTokens := strings.Fields(fts5SpecialChars.ReplaceAllString(w, " "))
 		if len(subTokens) < 2 {
-			// Single sub-token after splitting (e.g., N' ÿ¢?N): just use the stripped form
+			// Single sub-token after splitting (e.g., N' → N): just use the stripped form
 			result = append(result, concat)
 			continue
 		}
-		// Dotted abbreviations (R.E.M., U.K.) ÿ¢?all single letters separated by dots only
+		// Dotted abbreviations (R.E.M., U.K.) — all single letters separated by dots only
 		if isDottedAbbreviation(w, subTokens) {
 			phrases = append(phrases, fmt.Sprintf(`"%s"`, strings.Join(subTokens, " ")))
 		} else {
-			// Punctuated names (a-ha, AC/DC, Jay-Z) ÿ¢?phrase for adjacency + concat for search_normalized
+			// Punctuated names (a-ha, AC/DC, Jay-Z) — phrase for adjacency + concat for search_normalized
 			phrases = append(phrases, fmt.Sprintf(`("%s" OR %s*)`, strings.Join(subTokens, " "), concat))
 		}
 		result = append(result, fmt.Sprintf("\x00PHRASE%d\x00", len(phrases)-1))
@@ -149,7 +149,7 @@ func buildFTS5Query(userInput string) string {
 		}
 		end := strings.Index(result[start+1:], `"`)
 		if end == -1 {
-			// Unmatched quote ÿ¢?remove it
+			// Unmatched quote — remove it
 			result = result[:start] + result[start+1:]
 			break
 		}
@@ -170,7 +170,7 @@ func buildFTS5Query(userInput string) string {
 	result = fts5LeadingStar.ReplaceAllString(result, "$1")
 	tokens := strings.Fields(result)
 
-	// Append * to plain tokens for prefix matching (e.g., "love" ÿ¢?"love*").
+	// Append * to plain tokens for prefix matching (e.g., "love" → "love*").
 	// Skip tokens that are already wildcarded or are quoted phrase placeholders.
 	for i, t := range tokens {
 		if strings.HasPrefix(t, "\x00") || strings.HasSuffix(t, "*") {
@@ -179,7 +179,9 @@ func buildFTS5Query(userInput string) string {
 		tokens[i] = t + "*"
 	}
 
-	result = strings.Join(tokens, " ")
+	// Use explicit AND between tokens — FTS5's implicit AND (space-separated)
+	// doesn't work correctly with parenthesized OR groups from processPunctuatedWords.
+	result = strings.Join(tokens, " AND ")
 
 	for i, phrase := range phrases {
 		placeholder := fmt.Sprintf("\x00PHRASE%d\x00", i)
@@ -338,21 +340,21 @@ func qualifyOrderBy(tableName, orderBy string) string {
 // content compared to the original input. This happens when special characters that
 // are part of the entity name (e.g., "1+", "C++", "!!!", "C#") get stripped by FTS
 // tokenization, leaving only very short/broad tokens. Also detects quoted phrases
-// that would be degraded by FTS5's unicode61 tokenizer (e.g., "1+" ÿ¢?token "1").
+// that would be degraded by FTS5's unicode61 tokenizer (e.g., "1+" → token "1").
 func ftsQueryDegraded(original, ftsQuery string) bool {
 	original = strings.TrimSpace(original)
 	if original == "" || ftsQuery == "" {
 		return false
 	}
-	// Strip quotes from original for comparison ÿ¢?we want the raw content
+	// Strip quotes from original for comparison — we want the raw content
 	stripped := strings.ReplaceAll(original, `"`, "")
 	// Extract the alphanumeric content from the original query
 	alphaNum := fts5PunctStrip.ReplaceAllString(stripped, "")
-	// If the original is entirely alphanumeric, nothing was stripped ÿ¢?not degraded
+	// If the original is entirely alphanumeric, nothing was stripped — not degraded
 	if len(alphaNum) == len(stripped) {
 		return false
 	}
-	// Check if all effective FTS tokens are very short (ÿ¢? chars).
+	// Check if all effective FTS tokens are very short (≤2 chars).
 	// Short tokens with prefix matching are too broad when special chars were stripped.
 	// For quoted phrases, extract the content and check the tokens inside.
 	tokens := strings.Fields(ftsQuery)
@@ -363,7 +365,7 @@ func ftsQueryDegraded(original, ftsQuery string) bool {
 			return false
 		}
 		// For OR groups from processPunctuatedWords (e.g., ("a ha" OR aha*)),
-		// the punctuated word was already handled meaningfully ÿ¢?not degraded.
+		// the punctuated word was already handled meaningfully — not degraded.
 		if strings.HasPrefix(t, "(") {
 			return false
 		}
@@ -435,7 +437,7 @@ func buildFTS5QueryWithVariants(userInput string) string {
 
 // newFTSSearch creates an FTS5 search strategy. Falls back to LIKE search if the
 // query produces no FTS tokens (e.g., punctuation-only like "!!!!!!!") or if FTS
-// tokenization stripped significant content from the query (e.g., "1+" ÿ¢?"1*").
+// tokenization stripped significant content from the query (e.g., "1+" → "1*").
 // Returns nil when the query produces no searchable tokens at all.
 func newFTSSearch(tableName, query string) searchStrategy {
 	q := buildFTS5QueryWithVariants(query)
@@ -443,7 +445,7 @@ func newFTSSearch(tableName, query string) searchStrategy {
 		// Fallback: try LIKE search with the raw query
 		cleaned := strings.TrimSpace(strings.ReplaceAll(query, `"`, ""))
 		if cleaned != "" {
-			log.Debug("Search using LIKE fallback for non-tokenizable query", "table", tableName, "query", cleaned)
+			log.Trace("Search using LIKE fallback for non-tokenizable query", "table", tableName, "query", cleaned)
 			return newLikeSearch(tableName, cleaned)
 		}
 		return nil
@@ -465,6 +467,6 @@ func newFTSSearch(tableName, query string) searchStrategy {
 		matchExpr: matchExpr,
 		rankExpr:  rankExpr,
 	}
-	log.Debug("Search using FTS5 backend", "table", tableName, "query", q, "filter", s)
+	log.Trace("Search using FTS5 backend", "table", tableName, "query", q, "filter", s)
 	return s
 }

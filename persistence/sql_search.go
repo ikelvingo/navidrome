@@ -24,7 +24,7 @@ type searchConfig struct {
 	OrderBy      []string // ORDER BY for text search results (e.g. ["name"])
 	MBIDFields   []string // columns to match when query is a UUID
 	// LibraryFilter overrides the default applyLibraryFilter for FTS Phase 1.
-	// Needed when library access requires a junction table (e.g. artist ÿ¢?library_artist).
+	// Needed when library access requires a junction table (e.g. artist → library_artist).
 	LibraryFilter func(sq SelectBuilder) SelectBuilder
 }
 

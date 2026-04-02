@@ -29,7 +29,7 @@ var _ = Describe("ScrobblerPlugin", Ordered, func() {
 
 	BeforeAll(func() {
 		// Load the scrobbler via a new manager with the test-scrobbler plugin
-		scrobblerManager, _ = createTestManagerWithPlugins(nil, "test-scrobbler"㶧⑪ބ웗Ʝ⨧)
+		scrobblerManager, _ = createTestManagerWithPlugins(nil, "test-scrobbler"+PackageExtension)
 
 		var ok bool
 		s, ok = scrobblerManager.LoadScrobbler("test-scrobbler")

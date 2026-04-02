@@ -12,10 +12,10 @@ var _ = Describe("String Utils", func() {
 			func(input, expected string) {
 				Expect(str.Clear(input)).To(Equal(expected))
 			},
-			Entry("k-os", "kâos", "k-os"),
-			Entry("kâos", "kâos", "k-os"),
-			Entry(`"Weird" Al Yankovic`, "âWeirdï¿?Al Yankovic", `"Weird" Al Yankovic`),
-			Entry("Single quotes", "âSingleï¿?quotes", "'Single' quotes"),
+			Entry("k-os", "k–os", "k-os"),
+			Entry("k‐os", "k‐os", "k-os"),
+			Entry(`"Weird" Al Yankovic`, "“Weird” Al Yankovic", `"Weird" Al Yankovic`),
+			Entry("Single quotes", "‘Single’ quotes", "'Single' quotes"),
 		)
 	})
 
@@ -48,12 +48,12 @@ var _ = Describe("String Utils", func() {
 		It("handles unicode characters correctly", func() {
 			// 6 emoji characters, maxRunes=5, suffix="..." (3 runes)
 			// So content gets 5-3=2 runes
-			Expect(str.TruncateRunes("ðððððð", 5, "...")).To(Equal("ðð..."))
+			Expect(str.TruncateRunes("😀😁😂😃😄😅", 5, "...")).To(Equal("😀😁..."))
 		})
 
 		It("handles multi-byte UTF-8 characters", func() {
-			// Characters like Ã© are single runes
-			Expect(str.TruncateRunes("CafÃ© au Lait", 5, "...")).To(Equal("Ca..."))
+			// Characters like é are single runes
+			Expect(str.TruncateRunes("Café au Lait", 5, "...")).To(Equal("Ca..."))
 		})
 
 		It("works with empty suffix", func() {
@@ -92,9 +92,9 @@ var _ = Describe("String Utils", func() {
 				Expect(str.TruncateRunes(input, maxRunes, suffix)).To(Equal(expected))
 			},
 			Entry("ASCII", "abcdefghij", 5, "...", "ab..."),
-			Entry("Mixed ASCII and Unicode", "abðcd", 4, ".", "abð."),
-			Entry("All emoji", "ððððð", 3, "ï¿?, "ððï¿?),
-			Entry("Japanese", "ããã«ã¡ã¯äžï¿?, 3, "ï¿?, "ããï¿?),
+			Entry("Mixed ASCII and Unicode", "ab😀cd", 4, ".", "ab😀."),
+			Entry("All emoji", "😀😁😂😃😄", 3, "…", "😀😁…"),
+			Entry("Japanese", "こんにちは世界", 3, "…", "こん…"),
 		)
 	})
 })
@@ -104,7 +104,7 @@ var testPaths = []string{
 	"/Music/iTunes 1/iTunes Media/Music/ABBA/Gold_ Greatest Hits/Mamma Mia.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Art Blakey/A Night At Birdland, Vol. 1/01 Annoucement By Pee Wee Marquette.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Art Blakey/A Night At Birdland, Vol. 1/02 Split Kick.m4a",
-	"/Music/iTunes 1/iTunes Media/Music/As FreneÌticas/As FreneÌticas/Perigosa.m4a",
+	"/Music/iTunes 1/iTunes Media/Music/As Frenéticas/As Frenéticas/Perigosa.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Bachman-Turner Overdrive/Gold/Down Down.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Bachman-Turner Overdrive/Gold/Hey You.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Bachman-Turner Overdrive/Gold/Hold Back The Water.m4a",
@@ -118,18 +118,18 @@ var testPaths = []string{
 	"/Music/iTunes 1/iTunes Media/Music/Blondie/Heart Of Glass/Heart Of Glass.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Bob Dylan/Nashville Skyline/06 Lay Lady Lay.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Botany/Feeling Today - EP/03 Waterparker.m4a",
-	"/Music/iTunes 1/iTunes Media/Music/CeÌu/CeÌU/06 10 Contados.m4a",
+	"/Music/iTunes 1/iTunes Media/Music/Céu/CéU/06 10 Contados.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Chance/Six Through Ten/03 Forgive+Forget.m4a",
-	"/Music/iTunes 1/iTunes Media/Music/Clive Tanaka Y Su Orquesta/Jet Set Siempre 1Â°/03 Neu Chicago (Side A) [For Dance].m4a",
+	"/Music/iTunes 1/iTunes Media/Music/Clive Tanaka Y Su Orquesta/Jet Set Siempre 1°/03 Neu Chicago (Side A) [For Dance].m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Compilations/Absolute Rock Classics/1-02 Smoke on the water.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Compilations/Almost Famous Soundtrack/10 Simple Man.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Compilations/Audio News - Rock'n' Roll Forever/01 Rock Around The Clock.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Compilations/Austin Powers_ International Man Of Mystery/01 The Magic Piper (Of Love).m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Compilations/Austin Powers_ The Spy Who Shagged Me/04 American Woman.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Compilations/Back To Dance/03 Long Cool Woman In A Black Dress.m4a",
-	"/Music/iTunes 1/iTunes Media/Music/Compilations/Back To The 70's - O Album Da DeÌcada/03 American Pie.m4a",
-	"/Music/iTunes 1/iTunes Media/Music/Compilations/BamboleÌ/09 In The Mood.m4a",
-	"/Music/iTunes 1/iTunes Media/Music/Compilations/BamboleÌ - Volume II/03 Blue Moon.m4a",
+	"/Music/iTunes 1/iTunes Media/Music/Compilations/Back To The 70's - O Album Da Década/03 American Pie.m4a",
+	"/Music/iTunes 1/iTunes Media/Music/Compilations/Bambolê/09 In The Mood.m4a",
+	"/Music/iTunes 1/iTunes Media/Music/Compilations/Bambolê - Volume II/03 Blue Moon.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Compilations/Big Brother Brasil 2004/04 I Will Survive.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Compilations/Collateral Soundtrack/03 Hands Of Time.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Compilations/Forrest Gump - The Soundtrack/1-12 California Dreamin'.m4a",
@@ -169,7 +169,7 @@ var testPaths = []string{
 	"/Music/iTunes 1/iTunes Media/Music/Elvis Presley/ELV1S 30 #1 Hits/02 Don't Be Cruel.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Eric Clapton/The Cream Of Clapton/03 I Feel Free.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Fleetwood Mac/The Very Best Of Fleetwood Mac/02 Don't Stop.m4a",
-	"/Music/iTunes 1/iTunes Media/Music/FrancÌ§oise Hardy/Comment te dire adieu/Comment te dire adieu.m4a",
+	"/Music/iTunes 1/iTunes Media/Music/Françoise Hardy/Comment te dire adieu/Comment te dire adieu.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Games/That We Can Play - EP/01 Strawberry Skies.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Grand Funk Railroad/Collectors Series/The Loco-Motion.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Henry Mancini/The Pink Panther (Music from the Film Score)/The Pink Panther Theme.m4a",
@@ -182,9 +182,9 @@ var testPaths = []string{
 	"/Music/iTunes 1/iTunes Media/Music/Peter Frampton/The Very Best of Peter Frampton/Baby, I Love Your Way.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Peter Frampton/The Very Best of Peter Frampton/Show Me The Way.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Raul Seixas/A Arte De Raul Seixas/03 Metamorfose Ambulante.m4a",
-	"/Music/iTunes 1/iTunes Media/Music/Raul Seixas/A Arte De Raul Seixas/18 Eu Nasci haÌ 10 Mil Anos AtraÌs.m4a",
+	"/Music/iTunes 1/iTunes Media/Music/Raul Seixas/A Arte De Raul Seixas/18 Eu Nasci há 10 Mil Anos Atrás.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Rick James/Street Songs/Super Freak.m4a",
-	"/Music/iTunes 1/iTunes Media/Music/Rita Lee/Fruto Proibido/Agora SoÌ Falta VoceÌ.m4a",
+	"/Music/iTunes 1/iTunes Media/Music/Rita Lee/Fruto Proibido/Agora Só Falta Você.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Rita Lee/Fruto Proibido/Esse Tal De Roque Enrow.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/Roberto Carlos/Roberto Carlos 1966/05 Negro Gato.m4a",
 	"/Music/iTunes 1/iTunes Media/Music/SOHO/Goddess/02 Hippychick.m4a",

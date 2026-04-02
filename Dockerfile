@@ -109,13 +109,11 @@ RUN --mount=type=bind,source=. \
     export CGO_ENABLED=1
     export CGO_CFLAGS_ALLOW="--define-prefix"
     export PKG_CONFIG_PATH=/taglib/lib/pkgconfig
-    cat $(go env GOENV)
 
     # Only Darwin (macOS) requires clang (default), Windows requires gcc, everything else can use any compiler.
     # So let's use gcc for everything except Darwin.
     if [ "$(xx-info os)" != "darwin" ]; then
-        export CC=$(xx-info)-gcc
-        export CXX=$(xx-info)-g++
+        # xx-go --wrap should set CC and CXX automatically
         # 使用双引号包裹整个参数，避免单引号嵌套问题
         export LD_EXTRA='-extldflags "-static -latomic"'
     fi

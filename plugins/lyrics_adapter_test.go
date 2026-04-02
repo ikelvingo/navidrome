@@ -16,8 +16,8 @@ var _ = Describe("LyricsPlugin", Ordered, func() {
 
 	BeforeAll(func() {
 		lyricsManager, _ = createTestManagerWithPlugins(nil,
-			"test-lyrics"㶧⑪ބ웗Ʝ⨧,
-			"test-metadata-agent"㶧⑪ބ웗Ʝ⨧,
+			"test-lyrics"+PackageExtension,
+			"test-metadata-agent"+PackageExtension,
 		)
 
 		p, ok := lyricsManager.LoadLyricsProvider("test-lyrics")
@@ -59,7 +59,7 @@ var _ = Describe("LyricsPlugin", Ordered, func() {
 		It("defaults language to 'xxx' when plugin does not provide one", func() {
 			manager, _ := createTestManagerWithPlugins(map[string]map[string]string{
 				"test-lyrics": {"no_lang": "true"},
-			}, "test-lyrics"㶧⑪ބ웗Ʝ⨧)
+			}, "test-lyrics"+PackageExtension)
 
 			p, ok := manager.LoadLyricsProvider("test-lyrics")
 			Expect(ok).To(BeTrue())
@@ -74,7 +74,7 @@ var _ = Describe("LyricsPlugin", Ordered, func() {
 		It("returns error when plugin returns error", func() {
 			manager, _ := createTestManagerWithPlugins(map[string]map[string]string{
 				"test-lyrics": {"error": "service unavailable"},
-			}, "test-lyrics"㶧⑪ބ웗Ʝ⨧)
+			}, "test-lyrics"+PackageExtension)
 
 			p, ok := manager.LoadLyricsProvider("test-lyrics")
 			Expect(ok).To(BeTrue())

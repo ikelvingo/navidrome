@@ -250,7 +250,7 @@ type AlbumID3 struct {
 	ArtistId              string     `xml:"artistId,attr,omitempty"            json:"artistId,omitempty"`
 	CoverArt              string     `xml:"coverArt,attr,omitempty"            json:"coverArt,omitempty"`
 	SongCount             int32      `xml:"songCount,attr,omitempty"           json:"songCount,omitempty"`
-	Duration              int32      `xml:"duration,attr,omitempty"            json:"duration,omitempty"`
+	Duration              int32      `xml:"duration,attr"                      json:"duration"`
 	PlayCount             int64      `xml:"playCount,attr,omitempty"           json:"playCount,omitempty"`
 	Created               *time.Time `xml:"created,attr,omitempty"             json:"created,omitempty"`
 	Starred               *time.Time `xml:"starred,attr,omitempty"             json:"starred,omitempty"`
@@ -509,10 +509,15 @@ type InternetRadioStations struct {
 }
 
 type Radio struct {
-	ID          string `xml:"id,attr"                    json:"id"`
-	Name        string `xml:"name,attr"                  json:"name"`
-	StreamUrl   string `xml:"streamUrl,attr"             json:"streamUrl"`
-	HomepageUrl string `xml:"homePageUrl,omitempty,attr" json:"homePageUrl,omitempty"`
+	ID                 string `xml:"id,attr"                    json:"id"`
+	Name               string `xml:"name,attr"                  json:"name"`
+	StreamUrl          string `xml:"streamUrl,attr"             json:"streamUrl"`
+	HomepageUrl        string `xml:"homePageUrl,omitempty,attr" json:"homePageUrl,omitempty"`
+	*OpenSubsonicRadio `xml:",omitempty" json:",omitempty"`
+}
+
+type OpenSubsonicRadio struct {
+	CoverArt string `xml:"coverArt,attr,omitempty"  json:"coverArt"`
 }
 
 type JukeboxStatus struct {

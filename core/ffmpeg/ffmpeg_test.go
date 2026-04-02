@@ -513,7 +513,7 @@ var _ = Describe("ffmpeg", func() {
 		})
 
 		It("prefers stream-level bit_rate over format-level when both are present", func() {
-			// ALAC/DSD: stream has bit_rate, format also has bit_rate ï¿?stream wins
+			// ALAC/DSD: stream has bit_rate, format also has bit_rate — stream wins
 			data := []byte(`{"streams":[` +
 				`{"index":0,"codec_name":"alac","codec_type":"audio","sample_fmt":"s16p",` +
 				`"sample_rate":"44100","channels":2,"bits_per_sample":0,` +
@@ -584,9 +584,12 @@ var _ = Describe("ffmpeg", func() {
 				// Cancel the context
 				cancel()
 
-				// Next read should fail due to cancelled context
-				_, err = stream.Read(buf)
-				Expect(err).To(HaveOccurred())
+				// Subsequent reads should eventually fail due to cancelled context.
+				// There may be buffered data in the pipe, so we drain until an error occurs.
+				Eventually(func() error {
+					_, err = stream.Read(buf)
+					return err
+				}).WithTimeout(5 * time.Second).WithPolling(10 * time.Millisecond).Should(HaveOccurred())
 			})
 
 			It("should handle immediate context cancellation", func() {
@@ -601,6 +604,46 @@ var _ = Describe("ffmpeg", func() {
 					BitRate:  128,
 				})
 				Expect(err).To(MatchError(context.Canceled))
+			})
+		})
+
+		Context("stderr capture", func() {
+			BeforeEach(func() {
+				if runtime.GOOS == "windows" {
+					Skip("stderr capture tests use /bin/sh, skipping on Windows")
+				}
+			})
+
+			It("should include stderr in error when process fails", func() {
+				ff := &ffmpeg{}
+				ctx := GinkgoT().Context()
+
+				// Directly call start() with a bash command that writes to stderr and fails
+				args := []string{"/bin/sh", "-c", "echo 'codec not found: libopus' >&2; exit 1"}
+				stream, err := ff.start(ctx, args)
+				Expect(err).ToNot(HaveOccurred())
+				defer stream.Close()
+
+				buf := make([]byte, 1024)
+				_, err = stream.Read(buf)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("codec not found: libopus"))
+			})
+
+			It("should not include stderr in error when process succeeds", func() {
+				ff := &ffmpeg{}
+				ctx := GinkgoT().Context()
+
+				// Command that writes to stderr but exits successfully
+				args := []string{"/bin/sh", "-c", "echo 'warning: something' >&2; printf 'output'"}
+				stream, err := ff.start(ctx, args)
+				Expect(err).ToNot(HaveOccurred())
+				defer stream.Close()
+
+				buf := make([]byte, 1024)
+				n, err := stream.Read(buf)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(string(buf[:n])).To(Equal("output"))
 			})
 		})
 

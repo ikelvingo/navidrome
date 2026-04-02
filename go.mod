@@ -63,7 +63,7 @@ require (
 	github.com/yanmingcao/opencc-go v1.0.0
 	go.senan.xyz/taglib v0.11.1
 	go.uber.org/goleak v1.3.0
-	golang.org/x/image v0.37.0
+	golang.org/x/image v0.38.0
 	golang.org/x/net v0.52.0
 	golang.org/x/sync v0.20.0
 	golang.org/x/sys v0.42.0
