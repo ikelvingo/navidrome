@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/bmatcuk/doublestar/v4"
+	"github.com/dustin/go-humanize"
 	"github.com/go-viper/encoding/ini"
 	"github.com/kr/pretty"
 	"github.com/navidrome/navidrome/consts"
@@ -70,6 +71,7 @@ type configOptions struct {
 	MPVCmdTemplate                  string
 	CoverArtPriority                string
 	CoverArtQuality                 int
+	EnableWebPEncoding              bool
 	ArtistArtPriority               string
 	ArtistImageFolder               string
 	DiscArtPriority                 string
@@ -79,6 +81,7 @@ type configOptions struct {
 	EnableStarRating                bool
 	EnableUserEditing               bool
 	EnableArtworkUpload             bool
+	MaxImageUploadSize              string
 	EnableSharing                   bool
 	ShareURL                        string
 	DefaultShareExpiration          time.Duration
@@ -87,6 +90,7 @@ type configOptions struct {
 	DefaultLanguage                 string
 	DefaultUIVolume                 int
 	UISearchDebounceMs              int
+	UICoverArtSize                  int
 	EnableReplayGain                bool
 	EnableCoverAnimation            bool
 	EnableNowPlaying                bool
@@ -142,7 +146,6 @@ type configOptions struct {
 	DevOptimizeDB                     bool
 	DevPreserveUnicodeInExternalCalls bool
 	DevEnableMediaFileProbe           bool
-	DevJpegCoverArt                   bool
 }
 
 type scannerOptions struct {
@@ -365,10 +368,11 @@ func Load(noConfigDump bool) {
 		validateBackupSchedule,
 		validatePlaylistsPath,
 		validatePurgeMissingOption,
+		validateMaxImageUploadSize,
 		validateURL("ExtAuth.LogoutURL", Server.ExtAuth.LogoutURL),
 	)
 	if err != nil {
-		os.Exit(1)
+		logFatal(err)
 	}
 
 	Server.Search.Backend = normalizeSearchBackend(Server.Search.Backend)
@@ -429,6 +433,13 @@ func Load(noConfigDump bool) {
 
 	// Removed options
 	logRemovedOptions("Spotify.ID", "Spotify.Secret")
+
+	// Validate other options
+	if Server.UICoverArtSize < 200 || Server.UICoverArtSize > 1200 {
+		newValue := max(200, min(1200, Server.UICoverArtSize))
+		log.Warn("UICoverArtSize must be between 200 and 1200, clamping", "value", Server.UICoverArtSize, "newValue", newValue)
+		Server.UICoverArtSize = newValue
+	}
 
 	// Call init hooks
 	for _, hook := range hooks {
@@ -548,8 +559,7 @@ func validatePlaylistsPath() error {
 	for path := range strings.SplitSeq(Server.PlaylistsPath, string(filepath.ListSeparator)) {
 		_, err := doublestar.Match(path, "")
 		if err != nil {
-			log.Error("Invalid PlaylistsPath", "path", path, err)
-			return err
+			return fmt.Errorf("invalid PlaylistsPath %q: %w", path, err)
 		}
 	}
 	return nil
@@ -576,9 +586,15 @@ func validatePurgeMissingOption() error {
 	valid := slices.Contains(allowedValues, Server.Scanner.PurgeMissing)
 	if !valid {
 		err := fmt.Errorf("invalid Scanner.PurgeMissing value: '%s'. Must be one of: %v", Server.Scanner.PurgeMissing, allowedValues)
-		log.Error(err.Error())
 		Server.Scanner.PurgeMissing = consts.PurgeMissingNever
 		return err
+	}
+	return nil
+}
+
+func validateMaxImageUploadSize() error {
+	if _, err := humanize.ParseBytes(Server.MaxImageUploadSize); err != nil {
+		return fmt.Errorf("invalid MaxImageUploadSize %q: use values like '10MB', '1GB', or raw bytes like '10485760': %w", Server.MaxImageUploadSize, err)
 	}
 	return nil
 }
@@ -608,7 +624,7 @@ func validateSchedule(schedule, field string) (string, error) {
 	if err != nil {
 		log.Error(fmt.Sprintf("Invalid %s. Please read format spec at https://pkg.go.dev/github.com/robfig/cron#hdr-CRON_Expression_Format", field), "schedule", schedule, err)
 	}
-	return schedule, err
+	return schedule, nil
 }
 
 // validateURL checks if the provided URL is valid and has either http or https scheme.
@@ -620,19 +636,13 @@ func validateURL(optionName, optionURL string) func() error {
 		}
 		u, err := url.Parse(optionURL)
 		if err != nil {
-			log.Error(fmt.Sprintf("Invalid %s: it could not be parsed", optionName), "url", optionURL, "err", err)
-			return err
+			return fmt.Errorf("invalid %s %q: %w", optionName, optionURL, err)
 		}
 		if u.Scheme != "http" && u.Scheme != "https" {
-			err := fmt.Errorf("invalid scheme for %s: '%s'. Only 'http' and 'https' are allowed", optionName, u.Scheme)
-			log.Error(err.Error())
-			return err
+			return fmt.Errorf("invalid scheme for %s: '%s'. Only 'http' and 'https' are allowed", optionName, u.Scheme)
 		}
-		// Require an absolute URL with a non-empty host and no opaque component.
 		if u.Host == "" || u.Opaque != "" {
-			err := fmt.Errorf("invalid %s: '%s'. A full http(s) URL with a non-empty host is required", optionName, optionURL)
-			log.Error(err.Error())
-			return err
+			return fmt.Errorf("invalid %s: '%s'. A full http(s) URL with a non-empty host is required", optionName, optionURL)
 		}
 		return nil
 	}
@@ -719,10 +729,13 @@ func setViperDefaults() {
 	viper.SetDefault("ignoredarticles", "The El La Los Las Le Les Os As O A")
 	viper.SetDefault("indexgroups", "A B C D E F G H I J K L M N O P Q R S T U V W X-Z(XYZ) [Unknown]([)")
 	viper.SetDefault("ffmpegpath", "")
+	viper.SetDefault("mpvpath", "")
 	viper.SetDefault("mpvcmdtemplate", "mpv --audio-device=%d --no-audio-display %f --input-ipc-server=%s")
 	viper.SetDefault("coverartpriority", "cover.*, folder.*, front.*, embedded, external")
 	viper.SetDefault("coverartquality", 75)
+	viper.SetDefault("enablewebpencoding", false)
 	viper.SetDefault("artistartpriority", "artist.*, album/artist.*, external")
+	viper.SetDefault("artistimagefolder", "")
 	viper.SetDefault("discartpriority", "disc*.*, cd*.*, cover.*, folder.*, front.*, discsubtitle, embedded")
 	viper.SetDefault("lyricspriority", ".lrc,.txt,embedded")
 	viper.SetDefault("enablegravatar", false)
@@ -733,10 +746,12 @@ func setViperDefaults() {
 	viper.SetDefault("defaultlanguage", "")
 	viper.SetDefault("defaultuivolume", consts.DefaultUIVolume)
 	viper.SetDefault("uisearchdebouncems", consts.DefaultUISearchDebounceMs)
+	viper.SetDefault("uicoverartsize", consts.DefaultUICoverArtSize)
 	viper.SetDefault("enablereplaygain", true)
 	viper.SetDefault("enablecoveranimation", true)
 	viper.SetDefault("enablenowplaying", true)
 	viper.SetDefault("enableartworkupload", true)
+	viper.SetDefault("maximageuploadsize", consts.DefaultMaxImageUploadSize)
 	viper.SetDefault("enablesharing", false)
 	viper.SetDefault("shareurl", "")
 	viper.SetDefault("defaultshareexpiration", 8760*time.Hour)
@@ -805,6 +820,7 @@ func setViperDefaults() {
 	viper.SetDefault("plugins.enabled", true)
 	viper.SetDefault("plugins.cachesize", "200MB")
 	viper.SetDefault("plugins.autoreload", false)
+	viper.SetDefault("plugins.loglevel", "")
 
 	// DevFlags. These are used to enable/disable debugging and incomplete features
 	viper.SetDefault("devlogsourceline", false)
@@ -818,7 +834,7 @@ func setViperDefaults() {
 	viper.SetDefault("devuishowconfig", true)
 	viper.SetDefault("devneweventstream", true)
 	viper.SetDefault("devoffsetoptimize", 50000)
-	viper.SetDefault("devartworkmaxrequests", max(4, runtime.NumCPU()))
+	viper.SetDefault("devartworkmaxrequests", max(2, runtime.NumCPU()/2))
 	viper.SetDefault("devartworkthrottlebackloglimit", consts.RequestThrottleBacklogLimit)
 	viper.SetDefault("devartworkthrottlebacklogtimeout", consts.RequestThrottleBacklogTimeout)
 	viper.SetDefault("devartistinfotimetolive", consts.ArtistInfoTimeToLive)
@@ -834,7 +850,6 @@ func setViperDefaults() {
 	viper.SetDefault("devoptimizedb", true)
 	viper.SetDefault("devpreserveunicodeinexternalcalls", false)
 	viper.SetDefault("devenablemediafileprobe", true)
-	viper.SetDefault("devjpegcoverart", false)
 }
 
 func init() {

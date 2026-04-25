@@ -32,7 +32,6 @@ import {
   useAlbumsPerPage,
   useImageLoadingState,
 } from '../common'
-import config from '../config'
 import { formatFullDate, intersperse } from '../utils'
 import AlbumExternalLinks from './AlbumExternalLinks'
 import { SafeHTML } from '../common/SafeHTML'

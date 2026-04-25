@@ -85,10 +85,11 @@ const (
 )
 
 const (
-	UICoverArtSize = 600
+	DefaultUICoverArtSize     = 300
+	DefaultMaxImageUploadSize = "10MB"
 )
 
-var CacheWarmerImageSizes = []int{UICoverArtSize}
+var CacheWarmerImageSizes = []int{DefaultUICoverArtSize}
 
 // Prometheus options
 const (

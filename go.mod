@@ -3,7 +3,7 @@ module github.com/navidrome/navidrome
 go 1.25.0
 
 // Fork to implement raw tags support
-replace go.senan.xyz/taglib => github.com/deluan/go-taglib v0.0.0-20260307161927-168f6e74ada7
+replace go.senan.xyz/taglib => github.com/deluan/go-taglib v0.0.0-20260407173416-cf47afbaa67a
 
 // Local netease adapter
 replace github.com/ikelvingo/navidrome-chinese/adapters/netease => ./adapters/netease
@@ -40,12 +40,12 @@ require (
 	github.com/kardianos/service v1.2.4
 	github.com/kr/pretty v0.3.1
 	github.com/lestrrat-go/jwx/v3 v3.0.13
-	github.com/mattn/go-sqlite3 v1.14.37
+	github.com/mattn/go-sqlite3 v1.14.38
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/mileusna/useragent v1.3.5
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
-	github.com/pelletier/go-toml/v2 v2.2.4
+	github.com/pelletier/go-toml/v2 v2.3.0
 	github.com/pocketbase/dbx v1.12.0
 	github.com/pressly/goose/v3 v3.27.0
 	github.com/prometheus/client_golang v1.23.2
@@ -109,7 +109,7 @@ require (
 	github.com/lestrrat-go/dsig v1.0.0 // indirect
 	github.com/lestrrat-go/dsig-secp256k1 v1.0.0 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
-	github.com/lestrrat-go/httprc/v3 v3.0.4 // indirect
+	github.com/lestrrat-go/httprc/v3 v3.0.5 // indirect
 	github.com/lestrrat-go/option/v2 v2.0.0 // indirect
 	github.com/maruel/natural v1.3.0 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect

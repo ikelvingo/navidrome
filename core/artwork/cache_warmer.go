@@ -24,7 +24,7 @@ type CacheWarmer interface {
 
 // NewCacheWarmer creates a new CacheWarmer instance. The CacheWarmer will pre-cache Artwork images in the background
 // to speed up the response time when the image is requested by the UI. The cache is pre-populated with the original
-// image size, as well as the size defined in the UICoverArtSize constant.
+// image size, as well as the size defined by the UICoverArtSize config option.
 func NewCacheWarmer(artwork Artwork, cache cache.FileCache) CacheWarmer {
 	// If image cache is disabled, return a NOOP implementation
 	if conf.Server.ImageCacheSize == "0" || !conf.Server.EnableArtworkPrecache {
@@ -38,10 +38,11 @@ func NewCacheWarmer(artwork Artwork, cache cache.FileCache) CacheWarmer {
 	}
 
 	a := &cacheWarmer{
-		artwork:    artwork,
-		cache:      cache,
-		buffer:     make(map[model.ArtworkID]struct{}),
-		wakeSignal: make(chan struct{}, 1),
+		artwork:      artwork,
+		cache:        cache,
+		buffer:       make(map[model.ArtworkID]struct{}),
+		wakeSignal:   make(chan struct{}, 1),
+		coverArtSize: conf.Server.UICoverArtSize,
 	}
 
 	// Create a context with a fake admin user, to be able to pre-cache Playlist CoverArts
@@ -51,11 +52,12 @@ func NewCacheWarmer(artwork Artwork, cache cache.FileCache) CacheWarmer {
 }
 
 type cacheWarmer struct {
-	artwork    Artwork
-	buffer     map[model.ArtworkID]struct{}
-	mutex      sync.Mutex
-	cache      cache.FileCache
-	wakeSignal chan struct{}
+	artwork      Artwork
+	buffer       map[model.ArtworkID]struct{}
+	mutex        sync.Mutex
+	cache        cache.FileCache
+	wakeSignal   chan struct{}
+	coverArtSize int
 }
 
 func (a *cacheWarmer) PreCache(artID model.ArtworkID) {
