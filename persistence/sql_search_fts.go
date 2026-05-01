@@ -388,22 +388,23 @@ func ftsQueryDegraded(original, ftsQuery string) bool {
 	return true
 }
 
-// buildFTS5QueryWithVariants 构建包含简繁体变体的FTS5查询
-// 如果查询包含中文，会生成简体和繁体两种形式的查询，用OR连接
+// buildFTS5QueryWithVariants builds an FTS5 query with simplified/traditional Chinese variants.
+// If the query contains Chinese characters, it generates queries for both simplified and
+// traditional forms and joins them with OR.
 func buildFTS5QueryWithVariants(userInput string) string {
-	// 获取查询变体
+	// Get simplified/traditional query variants
 	queries := opencc.GetSearchQueries(userInput)
 
 	if len(queries) == 0 {
 		return ""
 	}
 
-	// 如果只有一个变体，直接返回
+	// Return directly if only one variant
 	if len(queries) == 1 {
 		return buildFTS5Query(queries[0])
 	}
 
-	// 为每个变体构建FTS5查询
+	// Build FTS5 query for each variant
 	var ftsQueries []string
 	for _, query := range queries {
 		ftsQuery := buildFTS5Query(query)
@@ -412,7 +413,7 @@ func buildFTS5QueryWithVariants(userInput string) string {
 		}
 	}
 
-	// 去重
+	// Deduplicate resulting queries
 	uniqueQueries := make(map[string]bool)
 	var finalQueries []string
 	for _, q := range ftsQueries {
@@ -426,12 +427,12 @@ func buildFTS5QueryWithVariants(userInput string) string {
 		return ""
 	}
 
-	// 如果只有一个有效查询，直接返回
+	// Return directly if only one effective query
 	if len(finalQueries) == 1 {
 		return finalQueries[0]
 	}
 
-	// 用OR连接多个查询变体
+	// Join multiple variants with OR
 	return "(" + strings.Join(finalQueries, " OR ") + ")"
 }
 

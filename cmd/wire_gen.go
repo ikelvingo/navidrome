@@ -39,7 +39,6 @@ import (
 	_ "github.com/navidrome/navidrome/adapters/lastfm"
 	_ "github.com/navidrome/navidrome/adapters/listenbrainz"
 	_ "github.com/navidrome/navidrome/adapters/taglib"	
-	_ "github.com/ikelvingo/navidrome-chinese/adapters/netease"
 )
 
 // Injectors from wire_injectors.go:

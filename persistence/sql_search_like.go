@@ -51,7 +51,7 @@ func newLikeSearch(tableName, query string) searchStrategy {
 // legacySearchExpr generates LIKE-based search filters against the full_text column.
 // This is the original search implementation, used when Search.Backend="legacy".
 func legacySearchExpr(tableName string, s string) Sqlizer {
-	// 获取简繁体查询变体
+	// Get simplified/traditional query variants for Chinese text
 	queries := opencc.GetSearchQueries(s)
 	if len(queries) > 1 {
 		log.Debug("Chinese query conversion", "original", s, "variants", queries)
@@ -105,10 +105,9 @@ func likeSearchExpr(tableName string, s string) Sqlizer {
 		return nil
 	}
 
-	// 获取简繁体查询变体
+	// Get simplified/traditional query variants for Chinese text
 	queries := opencc.GetSearchQueries(s)
 
-	// 调试日志：记录查询变体
 	log.Debug("OpenCC query variants", "original", s, "variants", queries, "count", len(queries))
 
 	if len(queries) > 1 {
@@ -121,7 +120,7 @@ func likeSearchExpr(tableName string, s string) Sqlizer {
 		return nil
 	}
 
-	// 为每个查询变体构建OR条件
+	// Build OR conditions for each query variant
 	var variantFilters []Sqlizer
 	for _, query := range queries {
 		words := strings.Fields(query)
@@ -136,7 +135,7 @@ func likeSearchExpr(tableName string, s string) Sqlizer {
 		variantFilters = append(variantFilters, wordFilters)
 	}
 
-	// 使用OR连接所有查询变体
+	// Join all query variants with OR
 	result := Or(variantFilters)
 	log.Debug("Search using LIKE backend with Chinese variants", "query", result, "table", tableName, "variants", queries, "variantCount", len(variantFilters))
 	return result

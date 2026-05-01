@@ -11,7 +11,7 @@ export ND_ENABLEINSIGHTSCOLLECTOR=false
 SUPPORTED_PLATFORMS ?= linux/amd64,linux/arm64,linux/arm/v5,linux/arm/v6,linux/arm/v7,linux/386,linux/riscv64,darwin/amd64,darwin/arm64,windows/amd64,windows/386
 IMAGE_PLATFORMS ?= $(shell echo $(SUPPORTED_PLATFORMS) | tr ',' '\n' | grep "linux" | grep -v "arm/v5" | tr '\n' ',' | sed 's/,$$//')
 PLATFORMS ?= $(SUPPORTED_PLATFORMS)
-DOCKER_TAG ?= ikelvingo/navidrome-chinese
+DOCKER_TAG ?= navidrome-chinese
 
 # Taglib version to use in cross-compilation, from https://github.com/navidrome/cross-taglib
 CROSS_TAGLIB_VERSION ?= 2.2.1-1

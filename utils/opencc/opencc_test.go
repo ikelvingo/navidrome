@@ -26,19 +26,19 @@ func TestContainsChinese(t *testing.T) {
 }
 
 func TestGetSearchQueries(t *testing.T) {
-	// 测试非中文查询
+	// Test non-Chinese query
 	nonChineseQueries := GetSearchQueries("beatles")
 	if len(nonChineseQueries) != 1 || nonChineseQueries[0] != "beatles" {
 		t.Errorf("Expected single query for non-Chinese, got %v", nonChineseQueries)
 	}
 
-	// 测试中文查询（简体）
+	// Test Chinese query (simplified)
 	simplifiedQueries := GetSearchQueries("周杰伦")
 	if len(simplifiedQueries) < 1 {
 		t.Errorf("Expected at least one query for Chinese input, got %v", simplifiedQueries)
 	}
 
-	// 测试中文查询（繁体）
+	// Test Chinese query (traditional)
 	traditionalQueries := GetSearchQueries("周杰倫")
 	if len(traditionalQueries) < 1 {
 		t.Errorf("Expected at least one query for Chinese input, got %v", traditionalQueries)
@@ -49,15 +49,15 @@ func TestGetSearchQueries(t *testing.T) {
 }
 
 func TestConvertBoth(t *testing.T) {
-	// 测试简体转繁体
+	// Test simplified to traditional conversion
 	simplified, traditional := ConvertBoth("周杰伦")
-	t.Logf("简体: %s, 繁体: %s", simplified, traditional)
+	t.Logf("simplified: %s, traditional: %s", simplified, traditional)
 
-	// 测试繁体转简体
+	// Test traditional to simplified conversion
 	simplified2, traditional2 := ConvertBoth("周杰倫")
-	t.Logf("简体: %s, 繁体: %s", simplified2, traditional2)
+	t.Logf("simplified: %s, traditional: %s", simplified2, traditional2)
 
-	// 测试非中文
+	// Test non-Chinese input
 	s, t2 := ConvertBoth("Hello")
 	if s != "Hello" || t2 != "Hello" {
 		t.Errorf("Expected same output for non-Chinese input, got %s, %s", s, t2)

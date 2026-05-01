@@ -239,7 +239,6 @@ func (api *Router) searchAll(ctx context.Context, sp *searchParams, musicFolderI
 	start := time.Now()
 	q := sanitize.Accents(strings.ToLower(strings.TrimSuffix(sp.query, "*")))
 
-	// 获取搜索查询变体（包含简繁体转换）
 	queries := opencc.GetSearchQueries(q)
 	if len(queries) > 1 {
 		log.Debug(ctx, "Chinese query conversion", "original", q, "variants", queries)

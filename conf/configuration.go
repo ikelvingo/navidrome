@@ -111,7 +111,6 @@ type configOptions struct {
 	Subsonic                        subsonicOptions     `json:",omitzero"`
 	LastFM                          lastfmOptions       `json:",omitzero"`
 	Deezer                          deezerOptions       `json:",omitzero"`
-	Netease                         neteaseOptions      `json:",omitzero"`
 	ListenBrainz                    listenBrainzOptions `json:",omitzero"`
 	EnableScrobbleHistory           bool
 	Tags                            map[string]TagConf `json:",omitempty"`
@@ -198,12 +197,6 @@ type deezerOptions struct {
 	// Computed values
 	Languages []string // Computed from Language, split by comma
 }
-type neteaseOptions struct {
-	Enabled         bool
-	APIUrls         string // Comma-separated list of API URLs
-	LoadBalanceMode string // "random" or "roundrobin"
-}
-
 type listenBrainzOptions struct {
 	Enabled         bool
 	BaseURL         string
@@ -548,7 +541,6 @@ func disableExternalServices() {
 	Server.LastFM.Enabled = false
 	Server.Deezer.Enabled = false
 	Server.ListenBrainz.Enabled = false
-	Server.Netease.Enabled = false
 	Server.Agents = ""
 	if Server.UILoginBackgroundURL == consts.DefaultUILoginBackgroundURL {
 		Server.UILoginBackgroundURL = consts.DefaultUILoginBackgroundURLOffline
@@ -789,7 +781,7 @@ func setViperDefaults() {
 	viper.SetDefault("subsonic.enableaveragerating", true)
 	viper.SetDefault("subsonic.legacyclients", "DSub")
 	viper.SetDefault("subsonic.minimalclients", "SubMusic")
-	viper.SetDefault("agents", "netease,deezer,lastfm,listenbrainz")
+	viper.SetDefault("agents", "deezer,lastfm,listenbrainz")
 	viper.SetDefault("lastfm.enabled", true)
 	viper.SetDefault("lastfm.language", consts.DefaultInfoLanguage)
 	viper.SetDefault("lastfm.apikey", "")
@@ -801,10 +793,6 @@ func setViperDefaults() {
 	viper.SetDefault("listenbrainz.baseurl", consts.DefaultListenBrainzBaseURL)
 	viper.SetDefault("listenbrainz.artistalgorithm", consts.DefaultListenBrainzArtistAlgorithm)
 	viper.SetDefault("listenbrainz.trackalgorithm", consts.DefaultListenBrainzTrackAlgorithm)
-	viper.SetDefault("netease.enabled", true)
-	viper.SetDefault("netease.apiurls", "")
-	viper.SetDefault("netease.loadbalancemode", "random")
-
 	viper.SetDefault("enablescrobblehistory", true)
 	viper.SetDefault("httpheaders.frameoptions", "DENY")
 	viper.SetDefault("backup.path", "")

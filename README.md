@@ -1,29 +1,11 @@
-#  Navidrome [China Special Edition] 
+#  Navidrome [China Special Edition]
+
+> The NetEase Cloud Music metadata agent has been extracted into a standalone plugin.
+> See [navidrome-netease-metadata-plugin](https://github.com) for the plugin project.
 
 ``` bash
 docker pull ikelvingo/navidrome-chinese:lastest
 ```
-
-## Provide scrobbling artists and albums bio from netease.
-
-## #~~You should use it with [navichina](https://github.com/TooAndy/navichina)~~ 
-
-# Thanks for TooAndy's great work.
-
-# #1139840: Remove navichina dependency in navidrome-chinese.
-
-Input new 'netease' agent for scrobbling artists, albums, similar songs, 
-and artist popular songs. 
-
-- Note1: Similar artists functionality not supported.
-
-- Note2: Configuration: Set the ND_AGENTS environment variable to 'netease' to activate the NetEase scrobbling agent.
-
-	```yaml
-	# docker compose modify
-	  environment:
-	    - ND_AGENTS=netease #,deezer,lastfm,listenbrainz
-	```
 
 -----
 
@@ -86,7 +68,7 @@ and artist popular songs.
 | `--clear-all`     | clear all external infomation               |
 | `--albums`        | clear all artist’s albums                   |
 
-After clearing, the next time you visit the artist's page, information will be fetched again from external sources (Last.fm, NetEase Cloud Music, etc.).
+After clearing, the next time you visit the artist's page, information will be fetched again from external sources (Last.fm, Deezer, ListenBrainz, etc.).
 
 -----
 

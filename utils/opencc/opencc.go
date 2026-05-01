@@ -13,21 +13,21 @@ import (
 )
 
 var (
-	s2tConverter *opencc.SimpleConverter // 简体转繁体
-	t2sConverter *opencc.SimpleConverter // 繁体转简体
+	s2tConverter *opencc.SimpleConverter // simplified-to-traditional converter
+	t2sConverter *opencc.SimpleConverter // traditional-to-simplified converter
 	initError    error
 	initOnce     sync.Once
 )
 
-// initConverters 延迟初始化转换器
+// initConverters lazily initializes OpenCC converters on first use
 func initConverters() {
 	initOnce.Do(func() {
 		log.Debug("OpenCC initialization starting...")
 
-		// 尝试多个可能的路径
+		// Try multiple possible paths for OpenCC config files
 		configPaths := []string{
-			getOpenCCConfigPathFromDocker(),     // 首先尝试Docker专用路径
-			getOpenCCConfigPathFromExecutable(), // 然后尝试可执行文件路径
+			getOpenCCConfigPathFromDocker(),     // Docker-specific paths first
+			getOpenCCConfigPathFromExecutable(), // then executable-relative paths
 			getOpenCCConfigPathFromGOPATH(),
 			getOpenCCConfigPathFromGoMod(),
 			getOpenCCConfigPathFromModuleCache(),
@@ -36,7 +36,7 @@ func initConverters() {
 
 		log.Debug("OpenCC initialization started", "configPaths", configPaths, "count", len(configPaths))
 
-		// 初始化转换器
+		// Initialize converters
 		for i, configPath := range configPaths {
 			log.Debug("Trying config path", "index", i, "path", configPath)
 
@@ -45,10 +45,10 @@ func initConverters() {
 				continue
 			}
 
-			// 检查是真实路径还是嵌入的虚拟路径
+			// Check if this is a real path or an embedded virtual path
 			if configPath == "embedded" {
 				log.Debug("Trying embedded config path")
-				// 尝试使用嵌入的配置文件
+				// Try using embedded configuration files
 				if initEmbeddedConverters() {
 					log.Debug("OpenCC converters initialized successfully from embedded resources")
 					return
@@ -61,7 +61,7 @@ func initConverters() {
 
 			log.Debug("Checking OpenCC config files", "path", configPath, "s2tPath", s2tPath, "t2sPath", t2sPath)
 
-			// 检查配置文件是否存在
+			// Verify config files exist
 			if _, err := os.Stat(s2tPath); err != nil {
 				log.Debug("OpenCC s2t.json not found", "path", s2tPath, "error", err)
 				continue
@@ -90,13 +90,13 @@ func initConverters() {
 			return
 		}
 
-		// 如果所有路径都失败，记录错误但不panic
+		// Log a warning if all paths failed, but don't panic -- conversion degrades gracefully
 		log.Warn("OpenCC converters failed to initialize. Chinese simplified/traditional conversion will be disabled.")
 		log.Debug("OpenCC initialization completed with failure")
 	})
 }
 
-// getOpenCCConfigPathFromGOPATH 从GOPATH获取opencc-go库的配置文件路径
+// getOpenCCConfigPathFromGOPATH looks for OpenCC config files in the GOPATH module cache
 func getOpenCCConfigPathFromGOPATH() string {
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
@@ -110,7 +110,7 @@ func getOpenCCConfigPathFromGOPATH() string {
 
 	log.Debug("OpenCC: GOPATH", "gopath", gopath)
 
-	// 尝试多个可能的路径模式
+	// Try multiple possible path patterns
 	possiblePaths := []string{
 		filepath.Join(gopath, "pkg", "mod", "github.com", "yanmingcao", "opencc-go@v1.0.0", "data", "config"),
 		filepath.Join(gopath, "pkg", "mod", "github.com", "yanmingcao", "opencc-go@*", "data", "config"),
@@ -119,11 +119,11 @@ func getOpenCCConfigPathFromGOPATH() string {
 	for _, configPath := range possiblePaths {
 		log.Debug("OpenCC: Trying GOPATH path", "path", configPath)
 
-		// 对于通配符路径，需要查找匹配的目录
+		// Expand wildcards in path
 		if strings.Contains(configPath, "*") {
 			matches, err := filepath.Glob(configPath)
 			if err == nil && len(matches) > 0 {
-				// 使用第一个匹配的目录
+				// Use the first matching directory
 				configPath = matches[0]
 				log.Debug("OpenCC: Found matching path via glob", "original", configPath, "matched", configPath)
 			}
@@ -142,15 +142,15 @@ func getOpenCCConfigPathFromGOPATH() string {
 	return ""
 }
 
-// getOpenCCConfigPathFromGoMod 尝试从当前项目的go.mod缓存获取
+// getOpenCCConfigPathFromGoMod looks for OpenCC config files in the go.mod vendor directory
 func getOpenCCConfigPathFromGoMod() string {
-	// 尝试从当前目录向上查找go.mod
+	// Start from current directory and look upward for go.mod
 	dir, err := os.Getwd()
 	if err != nil {
 		return ""
 	}
 
-	// 检查项目本地的vendor或缓存路径
+	// Check project-local vendor or cache paths
 	configPath := filepath.Join(dir, "vendor", "github.com", "yanmingcao", "opencc-go", "data", "config")
 	if _, err := os.Stat(configPath); err == nil {
 		return configPath
@@ -159,9 +159,9 @@ func getOpenCCConfigPathFromGoMod() string {
 	return ""
 }
 
-// getOpenCCConfigPathFromModuleCache 从Go模块缓存获取配置文件路径
+// getOpenCCConfigPathFromModuleCache looks for OpenCC config files in the Go module cache
 func getOpenCCConfigPathFromModuleCache() string {
-	// 在生产环境（Docker）中，可能没有go命令，所以先尝试环境变量
+	// Try GOMODCACHE environment variable first (may be set in production)
 	if gomodcache := os.Getenv("GOMODCACHE"); gomodcache != "" {
 		pattern := filepath.Join(gomodcache, "github.com", "yanmingcao", "opencc-go@*", "data", "config")
 		matches, err := filepath.Glob(pattern)
@@ -170,13 +170,12 @@ func getOpenCCConfigPathFromModuleCache() string {
 		}
 	}
 
-	// 尝试使用go env GOMODCACHE（开发环境）
+	// Try using go env GOMODCACHE (development environment)
 	cmd := exec.Command("go", "env", "GOMODCACHE")
 	output, err := cmd.Output()
 	if err == nil {
 		gomodcache := strings.TrimSpace(string(output))
 		if gomodcache != "" {
-			// 尝试查找opencc-go的配置文件
 			pattern := filepath.Join(gomodcache, "github.com", "yanmingcao", "opencc-go@*", "data", "config")
 			matches, err := filepath.Glob(pattern)
 			if err == nil && len(matches) > 0 {
@@ -185,13 +184,13 @@ func getOpenCCConfigPathFromModuleCache() string {
 		}
 	}
 
-	// 如果GOMODCACHE失败，尝试使用默认的模块缓存路径
+	// Fall back to the default module cache path
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return ""
 	}
 
-	// Go 1.15+ 默认模块缓存路径
+	// Go 1.15+ default module cache path
 	defaultCache := filepath.Join(home, "go", "pkg", "mod")
 	pattern := filepath.Join(defaultCache, "github.com", "yanmingcao", "opencc-go@*", "data", "config")
 	matches, err := filepath.Glob(pattern)
@@ -202,9 +201,8 @@ func getOpenCCConfigPathFromModuleCache() string {
 	return ""
 }
 
-// getOpenCCConfigPathFromExecutable 从可执行文件所在目录获取配置文件路径
+// getOpenCCConfigPathFromExecutable looks for OpenCC config files relative to the executable path
 func getOpenCCConfigPathFromExecutable() string {
-	// 获取可执行文件路径
 	exePath, err := os.Executable()
 	if err != nil {
 		log.Debug("OpenCC: Cannot get executable path", "error", err)
@@ -214,12 +212,12 @@ func getOpenCCConfigPathFromExecutable() string {
 	exeDir := filepath.Dir(exePath)
 	log.Debug("OpenCC: Executable directory", "exeDir", exeDir, "exePath", exePath)
 
-	// 尝试在可执行文件目录下查找配置文件
+	// Try searching for config files near the executable directory
 	possiblePaths := []string{
 		filepath.Join(exeDir, "opencc", "config"),
 		filepath.Join(exeDir, "config", "opencc"),
 		filepath.Join(exeDir, "..", "share", "opencc"),
-		// Docker容器中的常见路径
+		// Common Docker paths
 		filepath.Join(exeDir, "..", "opencc", "config"),
 		filepath.Join("/usr", "share", "opencc"),
 		filepath.Join("/usr", "local", "share", "opencc"),
@@ -243,26 +241,25 @@ func getOpenCCConfigPathFromExecutable() string {
 	return ""
 }
 
-// getOpenCCConfigPathFromDocker 专门为Docker容器设计的配置文件路径
+// getOpenCCConfigPathFromDocker looks for OpenCC config files in Docker container paths
 func getOpenCCConfigPathFromDocker() string {
-	// Docker容器中的可能路径
-	// 参考其他Go库和系统库的安装位置
+	// Common paths found in Docker containers
 	dockerPaths := []string{
-		// 标准系统路径
+		// Standard system paths
 		"/usr/share/opencc",
 		"/usr/local/share/opencc",
-		// Alpine Linux中的常见路径
+		// Alpine Linux paths
 		"/usr/lib/opencc",
 		"/usr/lib64/opencc",
-		// Go模块可能的位置（如果通过apk安装）
+		// Go module locations (if installed via apk)
 		"/usr/lib/go/pkg/mod/github.com/yanmingcao/opencc-go@v1.0.0/data/config",
 		"/usr/local/lib/go/pkg/mod/github.com/yanmingcao/opencc-go@v1.0.0/data/config",
-		// 可执行文件相关路径
+		// Executable-relative paths
 		"/app/opencc/config",
 		"/app/config/opencc",
-		// 用户主目录路径
+		// Home directory paths
 		"/root/.local/share/opencc",
-		// 其他可能路径
+		// Other common locations
 		"/opt/opencc/config",
 		"/var/lib/opencc",
 	}
@@ -285,20 +282,18 @@ func getOpenCCConfigPathFromDocker() string {
 	return ""
 }
 
-// getOpenCCConfigPathFromEmbedded 返回嵌入配置的标识符
+// getOpenCCConfigPathFromEmbedded returns a sentinel value indicating embedded config should be used
 func getOpenCCConfigPathFromEmbedded() string {
-	// 这是一个虚拟路径，用于触发initEmbeddedConverters
 	return "embedded"
 }
 
-// initEmbeddedConverters 尝试使用嵌入的配置文件初始化转换器
+// initEmbeddedConverters tries to initialize converters using embedded configuration files
 func initEmbeddedConverters() bool {
-	// 目前没有嵌入的配置文件，返回false
-	// 未来可以考虑将配置文件嵌入到二进制中
+	// Embedded config files are not yet implemented
 	return false
 }
 
-// ContainsChinese 检测字符串是否包含中文字符
+// ContainsChinese returns true if the string contains any Chinese (Han) characters
 func ContainsChinese(s string) bool {
 	for _, r := range s {
 		if unicode.Is(unicode.Han, r) {
@@ -308,35 +303,35 @@ func ContainsChinese(s string) bool {
 	return false
 }
 
-// ConvertBoth 将查询字符串转换为简体和繁体两种形式
-// 返回：(简体形式, 繁体形式)
+// ConvertBoth converts the input text into both simplified and traditional Chinese forms.
+// Returns (simplified, traditional). If no Chinese characters are detected, returns original text.
 func ConvertBoth(text string) (string, string) {
 	if !ContainsChinese(text) {
 		return text, text
 	}
 
-	// 延迟初始化转换器
+	// Lazily initialize converters
 	initConverters()
 
-	// 如果转换器未初始化，返回原始文本
+	// Return original text if converters are not available
 	if s2tConverter == nil || t2sConverter == nil {
 		log.Debug("OpenCC converters are nil, returning original text", "text", text)
 		return text, text
 	}
 
-	// 简体转繁体
+	// Convert simplified to traditional
 	traditional := s2tConverter.Convert(text)
 
-	// 繁体转简体
+	// Convert traditional to simplified
 	simplified := t2sConverter.Convert(text)
 
 	log.Debug("OpenCC conversion result", "original", text, "simplified", simplified, "traditional", traditional)
 	return simplified, traditional
 }
 
-// GetSearchQueries 获取搜索查询变体列表
-// 如果输入包含中文，返回简体和繁体两种形式（去重）
-// 如果不包含中文，返回原始查询
+// GetSearchQueries returns a deduplicated list of search query variants.
+// If the input contains Chinese characters, returns simplified and traditional variants.
+// If no Chinese characters, returns a single-element slice with the original text.
 func GetSearchQueries(text string) []string {
 	if !ContainsChinese(text) {
 		return []string{text}
@@ -344,7 +339,7 @@ func GetSearchQueries(text string) []string {
 
 	simplified, traditional := ConvertBoth(text)
 
-	// 去重
+	// Deduplicate variants
 	queries := []string{text}
 	if simplified != text {
 		queries = append(queries, simplified)
@@ -353,9 +348,7 @@ func GetSearchQueries(text string) []string {
 		queries = append(queries, traditional)
 	}
 
-	// 确保返回的查询列表包含简体和繁体两种形式
-	// 如果输入是简体，确保包含繁体
-	// 如果输入是繁体，确保包含简体
+	// Ensure both simplified and traditional forms are present
 	hasSimplified := false
 	hasTraditional := false
 	for _, q := range queries {
@@ -376,8 +369,7 @@ func GetSearchQueries(text string) []string {
 	return queries
 }
 
-// NormalizeQuery 规范化查询字符串
-// 去除首尾空格和尾部通配符
+// NormalizeQuery trims whitespace and trailing wildcards from a query string
 func NormalizeQuery(q string) string {
 	q = strings.TrimSpace(q)
 	q = strings.TrimSuffix(q, "*")

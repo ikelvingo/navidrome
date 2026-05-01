@@ -25,7 +25,6 @@ import (
 	"github.com/navidrome/navidrome/server/nativeapi"
 	"github.com/navidrome/navidrome/server/public"
 	"github.com/navidrome/navidrome/server/subsonic"
-	"github.com/ikelvingo/navidrome-chinese/adapters/netease"
 )
 
 var allProviders = wire.NewSet(

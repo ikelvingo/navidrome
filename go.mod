@@ -5,9 +5,6 @@ go 1.25.0
 // Fork to implement raw tags support
 replace go.senan.xyz/taglib => github.com/deluan/go-taglib v0.0.0-20260407173416-cf47afbaa67a
 
-// Local netease adapter
-replace github.com/ikelvingo/navidrome-chinese/adapters/netease => ./adapters/netease
-
 require (
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/andybalholm/cascadia v1.3.3
@@ -35,7 +32,6 @@ require (
 	github.com/google/wire v0.7.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/ikelvingo/navidrome-chinese/adapters/netease v0.0.0
 	github.com/jellydator/ttlcache/v3 v3.4.0
 	github.com/kardianos/service v1.2.4
 	github.com/kr/pretty v0.3.1
