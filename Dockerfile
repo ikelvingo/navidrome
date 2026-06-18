@@ -2,7 +2,7 @@ FROM --platform=$BUILDPLATFORM ghcr.nju.edu.cn/crazy-max/osxcross:14.5-debian AS
 
 ########################################################################################################################
 
-FROM --platform=$BUILDPLATFORM alpine:3.20 AS xx-build
+FROM --platform=$BUILDPLATFORM docker.m.daocloud.io/library/alpine:3.20 AS xx-build
 
 # v1.9.0
 ENV XX_VERSION=a5592eab7a57895e8d385394ff12241bc65ecd50
@@ -27,14 +27,26 @@ COPY --from=xx-build /out/ /usr/bin/
 
 ########################################################################################################################
 ### Build Navidrome UI
-FROM --platform=$BUILDPLATFORM node:lts-alpine AS ui
+FROM --platform=$BUILDPLATFORM docker.m.daocloud.io/library/node:lts-alpine AS ui
 WORKDIR /app
 RUN npm config set registry https://registry.npmmirror.com/
 ENV LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8
 ENV CGO_ENABLED=0
 COPY ui/package.json ui/package-lock.json ./
 COPY ui/bin/ ./bin/
-RUN npm ci
+RUN node --input-type=commonjs -e "const p=require('./package.json'); delete p.scripts.postinstall; require('fs').writeFileSync('./package.json', JSON.stringify(p, null, 2))" && \
+    npm ci && \
+    WORKBOX_DIR=public/3rdparty/workbox && \
+    rm -rf ${WORKBOX_DIR} && \
+    /app/node_modules/.bin/workbox copyLibraries build/3rdparty/ && \
+    mkdir -p ${WORKBOX_DIR} && \
+    mv build/3rdparty/workbox-*/workbox-sw.js ${WORKBOX_DIR} && \
+    mv build/3rdparty/workbox-*/workbox-core.prod.js ${WORKBOX_DIR} && \
+    mv build/3rdparty/workbox-*/workbox-strategies.prod.js ${WORKBOX_DIR} && \
+    mv build/3rdparty/workbox-*/workbox-routing.prod.js ${WORKBOX_DIR} && \
+    mv build/3rdparty/workbox-*/workbox-navigation-preload.prod.js ${WORKBOX_DIR} && \
+    mv build/3rdparty/workbox-*/workbox-precaching.prod.js ${WORKBOX_DIR} && \
+    rm -rf build/3rdparty/workbox-*
 
 # Build bundle
 COPY ui/ ./
@@ -45,7 +57,7 @@ COPY --from=ui /build /build
 
 ########################################################################################################################
 ### Build Navidrome binary for Docker image (dynamic musl, enables native libwebp via dlopen)
-FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS build-alpine
+FROM --platform=$BUILDPLATFORM docker.m.daocloud.io/library/golang:1.26-alpine AS build-alpine
 COPY --from=xx / /
 
 ARG TARGETPLATFORM
@@ -84,7 +96,7 @@ EOT
 
 ########################################################################################################################
 ### Build Navidrome binary for standalone distribution (static glibc, cross-compiled)
-FROM --platform=$BUILDPLATFORM golang:1.26-trixie AS base
+FROM --platform=$BUILDPLATFORM docker.m.daocloud.io/library/golang:1.26-trixie AS base
 ADD deb-sources.list /etc/apt/sources.list.d/debian.sources
 RUN apt-get update && apt-get install -y clang lld
 
@@ -155,7 +167,7 @@ COPY --from=build /out /
 
 ########################################################################################################################
 ### Build Final Image
-FROM alpine:3.20 AS final
+FROM docker.m.daocloud.io/library/alpine:3.20 AS final
 
 RUN sed -i "s/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g" /etc/apk/repositories
 ENV LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8
