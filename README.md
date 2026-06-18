@@ -1,7 +1,11 @@
 #  Navidrome [China Special Edition]
 
+>  [!IMPORTANT]
+>
+> 从0.62.0版本开始，通过注入方式提供的网易云刮削功能将从本项目中移除，并独立为一个插件功能。
+> 详细信息请参见[navidrome-netease-metadata-plugin](https://github.com/ikelvingo/navidrome-netease-metadata-plugin)
 > The NetEase Cloud Music metadata agent has been extracted into a standalone plugin.
-> See [navidrome-netease-metadata-plugin](https://github.com) for the plugin project.
+> See [navidrome-netease-metadata-plugin](https://github.com/ikelvingo/navidrome-netease-metadata-plugin) for the plugin project.
 
 ``` bash
 docker pull ikelvingo/navidrome-chinese:lastest
@@ -71,6 +75,3 @@ docker pull ikelvingo/navidrome-chinese:lastest
 After clearing, the next time you visit the artist's page, information will be fetched again from external sources (Last.fm, Deezer, ListenBrainz, etc.).
 
 -----
-
-
-

@@ -19,6 +19,7 @@ import {
 } from 'react-admin'
 import Lightbox from 'react-image-lightbox'
 import { COVER_ART_SIZE } from '../consts'
+import config from '../config'
 import 'react-image-lightbox/style.css'
 import subsonic from '../subsonic'
 import {
