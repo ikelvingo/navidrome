@@ -142,6 +142,12 @@ func (m *Manager) Start(ctx context.Context) error {
 
 	log.Info(ctx, "Starting plugin manager", "folder", folder)
 
+	// Extract built-in plugins that are not yet on disk
+	extracted := extractBuiltinPlugins(folder)
+	for _, name := range extracted {
+		log.Info(ctx, "Extracted builtin plugin", "plugin", name)
+	}
+
 	// Clear previous error states so plugins can be retried on restart
 	adminCtx := adminContext(ctx)
 	if err := m.ds.Plugin(adminCtx).ClearErrors(); err != nil {
