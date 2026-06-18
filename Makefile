@@ -5,7 +5,6 @@ comma:=,
 GO_BUILD_TAGS=netgo,sqlite_fts5$(if $(EXTRA_BUILD_TAGS),$(comma)$(EXTRA_BUILD_TAGS))
 
 # Set global environment variables, required for most targets
-export CGO_CFLAGS_ALLOW=--define-prefix
 export ND_ENABLEINSIGHTSCOLLECTOR=false
 
 SUPPORTED_PLATFORMS ?= linux/amd64,linux/arm64,linux/arm/v5,linux/arm/v6,linux/arm/v7,linux/386,linux/riscv64,darwin/amd64,darwin/arm64,windows/amd64,windows/386
@@ -13,9 +12,7 @@ IMAGE_PLATFORMS ?= $(shell echo $(SUPPORTED_PLATFORMS) | tr ',' '\n' | grep "lin
 PLATFORMS ?= $(SUPPORTED_PLATFORMS)
 DOCKER_TAG ?= navidrome-chinese
 
-# Taglib version to use in cross-compilation, from https://github.com/navidrome/cross-taglib
-CROSS_TAGLIB_VERSION ?= 2.2.1-1
-GOLANGCI_LINT_VERSION ?= v2.11.1
+GOLANGCI_LINT_VERSION ?= v2.12.0
 
 UI_SRC_FILES := $(shell find ui -type f -not -path "ui/build/*" -not -path "ui/node_modules/*")
 
@@ -70,8 +67,8 @@ test-i18n: ##@Development Validate all translations files
 
 install-golangci-lint: ##@Development Install golangci-lint if not present
 	@INSTALL=false; \
-	if PATH=$$PATH:./bin which golangci-lint > /dev/null 2>&1; then \
-		CURRENT_VERSION=$$(PATH=$$PATH:./bin golangci-lint version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1); \
+	if PATH=./bin:$$PATH which golangci-lint > /dev/null 2>&1; then \
+		CURRENT_VERSION=$$(PATH=./bin:$$PATH golangci-lint version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1); \
 		REQUIRED_VERSION=$$(echo "$(GOLANGCI_LINT_VERSION)" | sed 's/^v//'); \
 		if [ "$$CURRENT_VERSION" != "$$REQUIRED_VERSION" ]; then \
 			echo "Found golangci-lint $$CURRENT_VERSION, but $$REQUIRED_VERSION is required. Reinstalling..."; \
@@ -88,7 +85,7 @@ install-golangci-lint: ##@Development Install golangci-lint if not present
 .PHONY: install-golangci-lint
 
 lint: install-golangci-lint ##@Development Lint Go code
-	PATH=$$PATH:./bin golangci-lint run --timeout 5m
+	PATH=./bin:$$PATH golangci-lint run --timeout 5m
 .PHONY: lint
 
 lintall: lint ##@Development Lint Go and JS code
@@ -169,7 +166,8 @@ docker-platforms: ##@Cross_Compilation List supported platforms
 docker-build: ##@Cross_Compilation Cross-compile for any supported platform (check `make docker-platforms`)
 	docker buildx build \
 		--platform $(PLATFORMS) \
-		--build-arg CROSS_TAGLIB_VERSION=${CROSS_TAGLIB_VERSION} \
+		--build-arg GIT_TAG=${GIT_TAG} \
+		--build-arg GIT_SHA=${GIT_SHA} \
 		--output "./binaries" --target binary .
 .PHONY: docker-build
 
@@ -179,7 +177,8 @@ docker-image: ##@Cross_Compilation Build Docker image, tagged as `ikelvingo/navi
 	@echo $(IMAGE_PLATFORMS) | grep -q "arm/v5" && echo "ERROR: Linux ARMv5 is not supported for Docker builds" && exit 1 || true
 	docker buildx build \
 		--platform $(IMAGE_PLATFORMS) \
-		--build-arg CROSS_TAGLIB_VERSION=${CROSS_TAGLIB_VERSION} \
+		--build-arg GIT_TAG=${GIT_TAG} \
+		--build-arg GIT_SHA=${GIT_SHA} \
 		--tag $(DOCKER_TAG) .
 .PHONY: docker-image
 
