@@ -7,6 +7,9 @@ FROM --platform=$BUILDPLATFORM docker.m.daocloud.io/library/alpine:3.20 AS xx-bu
 # v1.9.0
 ENV XX_VERSION=a5592eab7a57895e8d385394ff12241bc65ecd50
 
+RUN ALPINE_VERSION=$(cat /etc/alpine-release | cut -d. -f1-2) && \
+    echo "https://mirrors.aliyun.com/alpine/v${ALPINE_VERSION}/main" > /etc/apk/repositories && \
+    echo "https://mirrors.aliyun.com/alpine/v${ALPINE_VERSION}/community" >> /etc/apk/repositories
 RUN apk add -U --no-cache git
 RUN git clone https://github.com/tonistiigi/xx && \
     cd xx && \
@@ -61,7 +64,10 @@ COPY --from=xx / /
 ARG TARGETPLATFORM
 
 ENV GOPROXY=https://goproxy.cn,direct
-RUN sed -i "s/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g" /etc/apk/repositories
+RUN ALPINE_VERSION=$(cat /etc/alpine-release | cut -d. -f1-2) && \
+    echo "https://mirrors.aliyun.com/alpine/v${ALPINE_VERSION}/main" > /etc/apk/repositories && \
+    echo "https://mirrors.aliyun.com/alpine/v${ALPINE_VERSION}/community" >> /etc/apk/repositories && \
+    apk update
 RUN apk add --no-cache clang lld file git
 RUN xx-apk add --no-cache gcc musl-dev zlib-dev
 RUN xx-verify --setup
@@ -175,7 +181,7 @@ FROM docker.m.daocloud.io/library/alpine:3.20 AS final
 LABEL maintainer="deluan@navidrome.org"
 LABEL org.opencontainers.image.source="https://github.com/navidrome/navidrome"
 
-RUN sed -i "s/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g" /etc/apk/repositories
+RUN sed -i "s/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g" /etc/apk/repositories
 ENV LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8
 ENV TZ=Asia/Shanghai
 
