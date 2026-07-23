@@ -61,6 +61,7 @@ COPY --from=xx / /
 ARG TARGETPLATFORM
 
 ENV GOPROXY=https://goproxy.cn,direct
+RUN sed -i "s/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g" /etc/apk/repositories
 RUN apk add --no-cache clang lld file git
 RUN xx-apk add --no-cache gcc musl-dev zlib-dev
 RUN xx-verify --setup
