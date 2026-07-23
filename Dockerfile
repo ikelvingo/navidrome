@@ -60,6 +60,7 @@ COPY --from=xx / /
 
 ARG TARGETPLATFORM
 
+ENV GOPROXY=https://goproxy.cn,direct
 RUN apk add --no-cache clang lld file git
 RUN xx-apk add --no-cache gcc musl-dev zlib-dev
 RUN xx-verify --setup
@@ -102,6 +103,8 @@ ADD deb-sources.list /etc/apt/sources.list.d/debian.sources
 RUN apt-get update && apt-get install -y clang lld
 COPY --from=xx / /
 WORKDIR /workspace
+
+ENV GOPROXY=https://goproxy.cn,direct
 
 FROM --platform=$BUILDPLATFORM base AS build
 
