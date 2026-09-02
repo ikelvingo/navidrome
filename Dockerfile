@@ -172,6 +172,17 @@ EOT
 # Verify if the binary was built for the correct platform and it is statically linked
 RUN xx-verify --static /out/navidrome*
 
+# Copy OpenCC configuration files
+RUN --mount=type=cache,target=/go/pkg/mod <<'EOT'
+    # Find and copy OpenCC configuration files
+    OPENCC_DIR=$(find /go/pkg/mod -path "*github.com/yanmingcao/opencc-go@*" -type d 2>/dev/null | head -1)
+    if [ -n "$OPENCC_DIR" ] && [ -d "$OPENCC_DIR/data/config" ]; then
+        mkdir -p /out/usr/share/opencc
+        cp -r "$OPENCC_DIR/data/config/"* /out/usr/share/opencc/
+        echo "OpenCC config files copied to /usr/share/opencc"
+    fi
+EOT
+
 FROM scratch AS binary
 COPY --from=build /out /
 
@@ -195,6 +206,9 @@ RUN apk add -U --no-cache ffmpeg mpv sqlite libwebp libwebpdemux libwebpmux && \
 
 # Copy navidrome binary (musl build for Docker, enables native libwebp)
 COPY --from=build-alpine /out/navidrome /app/
+
+# Copy OpenCC configuration files
+COPY --from=build /out/usr/share/opencc /usr/share/opencc/
 
 VOLUME ["/data", "/music"]
 ENV ND_MUSICFOLDER=/music
