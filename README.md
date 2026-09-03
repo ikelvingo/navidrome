@@ -8,7 +8,7 @@
 > See [navidrome-netease-metadata-plugin](https://github.com/ikelvingo/navidrome-netease-metadata-plugin) for the plugin project.
 
 ``` bash
-docker pull ikelvingo/navidrome-chinese:lastest
+docker pull ikelvingo/navidrome-chinese:latest
 ```
 
 -----
